@@ -1,0 +1,31 @@
+{
+  "name": "Papo",
+  "short_name": "Papo",
+  "description": "Papo - App de mensagens instantâneas",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#111b21",
+  "theme_color": "#075e54",
+  "lang": "pt-BR",
+  "categories": ["social", "communication"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nova conversa privada",
+      "short_name": "Nova conversa",
+      "description": "Iniciar uma nova conversa privada",
+      "url": "/?action=new-private"
+    },
+    {
+      "name": "Novo grupo",
+      "short_name": "Novo grupo",
+      "description": "Criar um novo grupo",
+      "url": "/?action=new-group"
+    }
+  ]
+}

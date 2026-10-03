@@ -1,0 +1,65 @@
+{
+  "name": "papo",
+  "version": "1.0.0",
+  "description": "Papo - Aplicativo de mensagens em tempo real (estilo WhatsApp) usando Node.js + Express + Socket.IO. Comunicacao real entre usuarios diferentes, sem respostas automaticas e sem localStorage como banco de dados. Feito e programado por: Kauan_hexa.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "electron": "electron .",
+    "electron:build": "electron-builder",
+    "electron:build:win": "electron-builder --win portable nsis"
+  },
+  "engines": {
+    "node": ">=18.0.0 <23.0.0"
+  },
+  "author": "Kauan_hexa",
+  "license": "ISC",
+  "dependencies": {
+    "@libsql/client": "^0.18.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.8.3",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "electron": "^31.3.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.kauanhexa.papo",
+    "productName": "Papo",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "server.js",
+      "public/**/*",
+      "data/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "electron-main.js"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        },
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "public/icon-512.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

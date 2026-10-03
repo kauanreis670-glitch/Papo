@@ -1,0 +1,4414 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Papo</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="theme-color" content="#075e54">
+<style>
+  :root{
+    --verde-escuro:#075e54;
+    --verde:#128c7e;
+    --verde-claro:#25d366;
+    --bg-chat:#e5ddd5;
+    --bolha-enviada:#d9fdd3;
+    --bolha-recebida:#ffffff;
+    --cinza-claro:#f0f2f5;
+    --cinza-borda:#d1d7db;
+    --texto-cinza:#667781;
+    --vermelho:#e53935;
+  }
+  button, .avatar, .action-btn, .conv-item{ touch-action:manipulation; }
+  html, body{ height:100%; }
+  body{
+    font-family: "Segoe UI", Arial, sans-serif;
+    background:#111b21;
+    height:100vh;
+    height:100dvh; /* altura real da viewport no mobile (ignora a barra do navegador que aparece/some) */
+    overflow:hidden;
+    overscroll-behavior:none;
+    -webkit-text-size-adjust:100%;
+  }
+  #app{
+    display:flex;
+    height:100vh;
+    height:100dvh;
+    max-width:1600px;
+    margin:0 auto;
+    background:#fff;
+  }
+
+  /* ---------------- SIDEBAR ---------------- */
+  #sidebar{
+    width:380px;
+    min-width:300px;
+    background:#fff;
+    border-right:1px solid var(--cinza-borda);
+    display:flex;
+    flex-direction:column;
+  }
+  #me-header{
+    background:var(--verde-escuro);
+    color:#fff;
+    padding:14px 16px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  #me-header .avatar{ width:44px; height:44px; font-size:16px; cursor:pointer; flex-shrink:0; }
+  #me-header-info{ flex:1; min-width:0; }
+  #me-header .label{ font-size:11px; opacity:.8; }
+  #me-number-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; row-gap:6px; }
+  #me-number{ font-size:15px; font-weight:700; letter-spacing:.5px; }
+  #me-name{ font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #copy-btn, #profile-btn, #switch-account-btn, #logout-btn{
+    background:rgba(255,255,255,.15);
+    border:none;
+    color:#fff;
+    padding:5px 8px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:12px;
+    flex-shrink:0;
+  }
+  #copy-btn:hover, #profile-btn:hover, #switch-account-btn:hover, #logout-btn:hover{ background:rgba(255,255,255,.3); }
+  #logout-btn{ background:rgba(255,80,80,.35); }
+  #logout-btn:hover{ background:rgba(255,80,80,.55); }
+
+  #add-area{
+    padding:10px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    border-bottom:1px solid var(--cinza-borda);
+    background:var(--cinza-claro);
+  }
+  .btn-row{ display:flex; gap:8px; }
+  .action-btn{
+    flex:1;
+    padding:10px;
+    border:none;
+    border-radius:8px;
+    background:var(--verde);
+    color:#fff;
+    font-size:14px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  .action-btn:hover{ background:var(--verde-escuro); }
+  .action-btn.secondary{ background:#54656f; }
+  .action-btn.secondary:hover{ background:#3b4a51; }
+
+  #conversation-list{
+    flex:1;
+    overflow-y:auto;
+  }
+  #sidebar-credit{
+    flex-shrink:0;
+    text-align:center;
+    font-size:11px;
+    color:#8696a0;
+    padding:10px 8px;
+    border-top:1px solid var(--cinza-borda);
+    background:#fff;
+  }
+  .conv-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 16px;
+    cursor:pointer;
+    border-bottom:1px solid #f0f0f0;
+  }
+  .conv-item:hover{ background:#f5f6f6; }
+  .conv-item.active{ background:#e9edef; }
+  .conv-item.pending-in{ background:#fff8e1; }
+  .avatar{
+    width:46px; height:46px;
+    border-radius:50%;
+    background:var(--verde);
+    color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700;
+    flex-shrink:0;
+    font-size:16px;
+    overflow:hidden;
+  }
+  .avatar img{ width:100%; height:100%; object-fit:cover; }
+  .avatar.group{ background:#54656f; }
+  .conv-info{ flex:1; min-width:0; }
+  .conv-title-row{ display:flex; justify-content:space-between; align-items:center; }
+  .conv-name{ font-weight:600; font-size:15px; color:#111b21; }
+  .conv-time{ font-size:11px; color:var(--texto-cinza); }
+  .conv-sub{
+    font-size:13px; color:var(--texto-cinza);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .conv-sub.highlight{ color:#c98a00; font-weight:600; }
+  .conv-sub.blocked{ color:var(--vermelho); font-weight:600; }
+  .status-dot{ font-size:11px; }
+
+  .request-actions{ display:flex; gap:8px; margin-top:6px; }
+  .request-actions button{
+    flex:1;
+    padding:6px 4px;
+    font-size:12.5px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  .btn-accept{ background:var(--verde-claro); color:#fff; }
+  .btn-accept:hover{ background:var(--verde); }
+  .btn-reject{ background:#f0f0f0; color:var(--vermelho); }
+  .btn-reject:hover{ background:#e2e2e2; }
+
+  #empty-list-msg{
+    padding:30px 16px;
+    text-align:center;
+    color:var(--texto-cinza);
+    font-size:14px;
+  }
+
+  /* ---------------- CHAT AREA ---------------- */
+  #chat-area{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    background:var(--bg-chat);
+  }
+  #chat-placeholder{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    color:var(--texto-cinza);
+    text-align:center;
+    padding:20px;
+  }
+  #chat-placeholder h2{ margin-bottom:10px; color:#41525d; }
+  #app-credit{ margin-top:18px; font-size:12px; color:#8696a0; }
+
+  #chat-header{
+    background:var(--cinza-claro);
+    padding:12px 18px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    border-bottom:1px solid var(--cinza-borda);
+  }
+  #chat-header .avatar{ width:40px; height:40px; font-size:14px; }
+  #chat-header-info{ flex:1; }
+  #chat-header-name{ font-weight:600; font-size:16px; color:#111b21; }
+  #chat-header-status{ font-size:13px; color:var(--texto-cinza); }
+
+  #messages{
+    flex:1;
+    overflow-y:auto;
+    padding:20px 6%;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .msg{
+    max-width:65%;
+    padding:8px 10px 6px 10px;
+    border-radius:8px;
+    box-shadow:0 1px 1px rgba(0,0,0,.1);
+    position:relative;
+    word-wrap:break-word;
+    white-space:pre-wrap;
+    font-size:14.5px;
+    line-height:1.35;
+  }
+  .msg.sent{
+    align-self:flex-end;
+    background:var(--bolha-enviada);
+    border-top-right-radius:0;
+  }
+  .msg.received{
+    align-self:flex-start;
+    background:var(--bolha-recebida);
+    border-top-left-radius:0;
+  }
+  .msg .sender-label{
+    font-size:12px;
+    font-weight:700;
+    color:var(--verde-escuro);
+    margin-bottom:2px;
+    display:block;
+  }
+  .msg .msg-time{
+    font-size:10.5px;
+    color:#8696a0;
+    text-align:right;
+    margin-top:2px;
+  }
+  .msg-time-row{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:5px;
+    margin-top:2px;
+  }
+  .msg-time-row .msg-time{ margin-top:0; }
+  .msg-delete-btn{
+    background:transparent;
+    border:none;
+    cursor:pointer;
+    font-size:12px;
+    line-height:1;
+    padding:2px;
+    opacity:.5;
+    flex-shrink:0;
+  }
+  .msg-delete-btn:hover{ opacity:1; }
+  .msg.deleted{ background:rgba(0,0,0,.03); box-shadow:none; }
+  .deleted-label{
+    font-style:italic;
+    color:var(--texto-cinza);
+    font-size:13.5px;
+  }
+  .msg audio{ max-width:250px; height:38px; margin-top:2px; }
+  .msg img.msg-image{
+    max-width:260px;
+    max-height:320px;
+    display:block;
+    border-radius:8px;
+    margin-top:2px;
+    cursor:pointer;
+    object-fit:cover;
+  }
+  .msg video.msg-video{
+    max-width:260px;
+    max-height:320px;
+    display:block;
+    border-radius:8px;
+    margin-top:2px;
+    background:#000;
+  }
+  .msg-file-card{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:rgba(0,0,0,.045);
+    border-radius:8px;
+    padding:10px 12px;
+    margin-top:2px;
+    min-width:200px;
+    max-width:260px;
+    text-decoration:none;
+    color:inherit;
+  }
+  .msg.sent .msg-file-card{ background:rgba(0,0,0,.06); }
+  .msg-file-icon{
+    width:36px; height:36px;
+    border-radius:8px;
+    background:var(--verde);
+    color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px;
+    flex-shrink:0;
+  }
+  .msg-file-info{ min-width:0; flex:1; }
+  .msg-file-name{
+    font-size:13.5px;
+    font-weight:600;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .msg-file-size{ font-size:11.5px; color:var(--texto-cinza); margin-top:2px; }
+
+  .system-banner{
+    align-self:center;
+    background:#fff3cd;
+    color:#7a5b00;
+    border:1px solid #ffe08a;
+    padding:10px 16px;
+    border-radius:10px;
+    font-size:13.5px;
+    text-align:center;
+    max-width:80%;
+  }
+  .system-banner.blocked{
+    background:#fde2e1;
+    color:#8a1c1c;
+    border-color:#f5b5b3;
+  }
+
+  #chat-footer{
+    background:var(--cinza-claro);
+    padding:10px 14px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    border-top:1px solid var(--cinza-borda);
+  }
+  #text-input{
+    flex:1;
+    padding:11px 16px;
+    border-radius:22px;
+    border:none;
+    outline:none;
+    font-size:14.5px;
+    background:#fff;
+  }
+  #record-btn, #send-btn, #attach-btn{
+    width:44px; height:44px;
+    border-radius:50%;
+    border:none;
+    background:var(--verde);
+    color:#fff;
+    font-size:18px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  #record-btn:hover, #send-btn:hover, #attach-btn:hover{ background:var(--verde-escuro); }
+  #attach-btn{ background:var(--texto-cinza); }
+  #attach-btn:hover{ background:#4d5b63; }
+  #record-btn.recording{
+    background:var(--vermelho);
+    animation:pulse 1.2s infinite;
+  }
+  @keyframes pulse{
+    0%{ box-shadow:0 0 0 0 rgba(229,57,53,.6); }
+    70%{ box-shadow:0 0 0 12px rgba(229,57,53,0); }
+    100%{ box-shadow:0 0 0 0 rgba(229,57,53,0); }
+  }
+  #recording-indicator{
+    font-size:13px;
+    color:var(--vermelho);
+    font-weight:600;
+    display:none;
+    align-items:center;
+    gap:6px;
+    padding:0 6px;
+  }
+
+  #chat-footer-disabled{
+    background:var(--cinza-claro);
+    padding:14px;
+    text-align:center;
+    font-size:13.5px;
+    color:var(--texto-cinza);
+    border-top:1px solid var(--cinza-borda);
+  }
+
+  #chat-footer-request{
+    background:var(--cinza-claro);
+    padding:12px 16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    border-top:1px solid var(--cinza-borda);
+    flex-wrap:wrap;
+  }
+  #chat-footer-request span{ font-size:13.5px; color:#41525d; font-weight:600; }
+  #chat-footer-request .request-actions{ margin-top:0; }
+  #chat-footer-request .request-actions button{ padding:9px 18px; font-size:13.5px; }
+
+  /* ---------------- MODAL ---------------- */
+  .modal-overlay{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,.5);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal-box{
+    background:#fff;
+    width:360px;
+    max-width:90vw;
+    border-radius:10px;
+    padding:22px;
+    box-shadow:0 6px 24px rgba(0,0,0,.25);
+  }
+  .modal-box h3{ margin-bottom:14px; color:#111b21; }
+  .modal-box label{ font-size:13px; color:var(--texto-cinza); display:block; margin:10px 0 4px; }
+  .modal-box input, .modal-box textarea{
+    width:100%;
+    padding:10px;
+    border:1px solid var(--cinza-borda);
+    border-radius:6px;
+    font-size:14px;
+    outline:none;
+  }
+  .modal-box textarea{ resize:vertical; min-height:60px; }
+  .modal-actions{ display:flex; gap:10px; margin-top:18px; }
+  .modal-actions button{
+    flex:1;
+    padding:10px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  .btn-confirm{ background:var(--verde); color:#fff; }
+  .btn-confirm:hover{ background:var(--verde-escuro); }
+  .btn-cancel{ background:#e4e6e9; color:#333; }
+  .btn-cancel:hover{ background:#d6d8db; }
+  #chat-header-status[data-typing="1"]{ color:var(--verde); font-style:italic; }
+
+  #chat-header-call-btn{
+    background:none; border:none; font-size:20px; cursor:pointer;
+    color:#54656f; padding:0 6px; margin-left:auto;
+  }
+  #chat-header-call-btn:hover{ opacity:.7; }
+
+  /* ---------------- CHAMADA DE VOZ (CALL) ---------------- */
+  .call-overlay{
+    position:fixed; inset:0; background:rgba(8,16,20,.97);
+    display:none; align-items:center; justify-content:center;
+    z-index:90; color:#fff;
+  }
+  .call-overlay.show{ display:flex; }
+  #call-content{
+    width:100%; height:100%; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; position:relative;
+  }
+  .call-single{
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    margin-bottom:60px;
+  }
+  .call-avatar-big{
+    width:140px; height:140px; border-radius:50%; overflow:hidden;
+    background:var(--verde); display:flex; align-items:center; justify-content:center;
+    font-size:46px; font-weight:600;
+  }
+  .call-avatar-big img{ width:100%; height:100%; object-fit:cover; }
+  .call-avatar-big.pulse{ animation:callPulse 1.4s ease-in-out infinite; }
+  @keyframes callPulse{
+    0%{ box-shadow:0 0 0 0 rgba(37,211,102,.55); }
+    70%{ box-shadow:0 0 0 22px rgba(37,211,102,0); }
+    100%{ box-shadow:0 0 0 0 rgba(37,211,102,0); }
+  }
+  .call-name{ font-size:22px; font-weight:600; }
+  .call-status{ font-size:14px; color:#c7d0d3; }
+  .call-controls{
+    position:absolute; bottom:50px; left:0; right:0;
+    display:flex; align-items:center; justify-content:center; gap:26px;
+  }
+  .call-btn{
+    width:60px; height:60px; border-radius:50%; border:none; cursor:pointer;
+    font-size:24px; display:flex; align-items:center; justify-content:center;
+    background:#3a4a50; color:#fff;
+  }
+  .call-btn:hover{ opacity:.85; }
+  .call-btn-hangup{ background:#e74c3c; }
+  .call-btn-accept{ background:var(--verde-claro); }
+  .call-btn-active{ background:var(--verde-claro); color:#08222b; }
+  .call-topbar{
+    position:absolute; top:0; left:0; right:0; z-index:2;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:16px 20px; font-size:14px; font-weight:600;
+    background:linear-gradient(rgba(0,0,0,.5), transparent);
+  }
+  .call-topbar-title{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .call-back-btn{
+    border:none; background:rgba(255,255,255,.14); color:#fff;
+    width:34px; height:34px; border-radius:50%; font-size:18px; line-height:1;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .call-back-btn:hover{ background:rgba(255,255,255,.25); }
+
+  .call-floating-chip{
+    position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:95;
+    background:#128C7E; color:#fff; border:none; border-radius:20px;
+    padding:9px 18px; font-weight:600; font-size:13px; cursor:pointer;
+    box-shadow:0 2px 10px rgba(0,0,0,.35); display:none;
+  }
+  .call-floating-chip.show{ display:flex; align-items:center; }
+  .call-floating-chip:hover{ filter:brightness(1.08); }
+
+  .call-photos{
+    display:flex; gap:30px; align-items:center; justify-content:center; flex-wrap:wrap;
+  }
+  .call-photo-box{
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+  }
+  .call-photo-box .call-avatar-big{ width:120px; height:120px; font-size:38px; }
+  .call-photo-box span{ font-size:13px; color:#c7d0d3; }
+  #call-screen-video{
+    width:100%; height:100%; object-fit:contain; background:#000;
+  }
+  .call-avatar-fallback{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+
+  .call-screen-wrap{ position:relative; width:100%; height:100%; }
+  .call-screen-wrap.switchable{ cursor:pointer; }
+  .call-screen-hint{
+    position:absolute; bottom:16px; left:50%; transform:translateX(-50%);
+    background:rgba(0,0,0,.6); color:#fff; font-size:12px; padding:6px 14px;
+    border-radius:20px; pointer-events:none; white-space:nowrap;
+  }
+  .call-pip-btn{
+    position:absolute; top:16px; right:18px; width:38px; height:38px;
+    border-radius:50%; border:none; background:rgba(0,0,0,.55); color:#fff;
+    font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .call-pip-btn:hover{ background:rgba(0,0,0,.75); }
+
+  .call-arrow-btn{
+    position:absolute; top:16px; left:18px; width:38px; height:38px;
+    border-radius:50%; border:none; background:rgba(255,255,255,.14); color:#fff;
+    font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .call-arrow-btn:hover{ background:rgba(255,255,255,.25); }
+
+  .call-grid{
+    display:flex; flex-wrap:wrap; gap:22px; align-items:center; justify-content:center;
+    max-width:90%; max-height:70vh; overflow:auto; padding:10px;
+  }
+  .call-grid .call-photo-box{ width:110px; }
+  .call-grid .call-avatar-big{ width:88px; height:88px; font-size:28px; }
+  .call-grid .call-avatar-big.speaking{ box-shadow:0 0 0 3px var(--verde-claro); }
+
+  /* Grade com TODAS as telas sendo compartilhadas ao mesmo tempo
+     (aparece ao tocar no meio de uma transmissão quando 2+ pessoas
+     estão compartilhando). Tocar numa das telas foca só nela. */
+  .call-screens-grid{
+    width:100%; height:100%; display:grid; gap:6px; padding:6px;
+    grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+    grid-auto-rows:1fr;
+  }
+  .call-screens-grid .call-screen-tile{
+    position:relative; background:#000; border-radius:8px; overflow:hidden;
+    cursor:pointer; display:flex; border:2px solid transparent;
+  }
+  .call-screens-grid .call-screen-tile:hover{ border-color:rgba(255,255,255,.35); }
+  .call-screens-grid .call-screen-tile video{
+    width:100%; height:100%; object-fit:contain; background:#000;
+  }
+  .call-screens-grid .call-screen-tile-label{
+    position:absolute; bottom:8px; left:8px; background:rgba(0,0,0,.6);
+    color:#fff; font-size:12px; padding:3px 9px; border-radius:5px; pointer-events:none;
+  }
+
+  .modal-error{
+    color:#c0392b;
+    font-size:13px;
+    margin-top:8px;
+    min-height:16px;
+  }
+  .hint{ font-size:11.5px; color:#8696a0; margin-top:4px; }
+
+  #profile-avatar-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin:12px 0 4px;
+  }
+  #profile-avatar-preview{
+    width:64px; height:64px;
+    border-radius:50%;
+    background:var(--verde);
+    color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700;
+    font-size:22px;
+    overflow:hidden;
+    flex-shrink:0;
+  }
+  #profile-avatar-preview img{ width:100%; height:100%; object-fit:cover; }
+  #profile-photo-actions{ display:flex; flex-direction:column; gap:6px; }
+  #profile-photo-actions button{
+    padding:7px 12px;
+    font-size:12.5px;
+    border:1px solid var(--cinza-borda);
+    background:#fff;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  #profile-photo-actions button:hover{ background:#f5f6f6; }
+
+  #group-avatar-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin:12px 0 4px;
+  }
+  #group-avatar-preview{
+    width:64px; height:64px;
+    border-radius:50%;
+    background:var(--verde);
+    color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700;
+    font-size:22px;
+    overflow:hidden;
+    flex-shrink:0;
+  }
+  #group-avatar-preview img{ width:100%; height:100%; object-fit:cover; }
+  #group-photo-actions{ display:flex; flex-direction:column; gap:6px; }
+  #group-photo-actions button{
+    padding:7px 12px;
+    font-size:12.5px;
+    border:1px solid var(--cinza-borda);
+    background:#fff;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  #group-photo-actions button:hover{ background:#f5f6f6; }
+
+  #chat-header-edit-btn{
+    background:transparent;
+    border:none;
+    color:var(--texto-cinza);
+    font-size:18px;
+    cursor:pointer;
+    opacity:.85;
+    padding:6px;
+    flex-shrink:0;
+  }
+  #chat-header-edit-btn:hover{ opacity:1; }
+
+  #profile-number-display{
+    padding:10px;
+    background:var(--cinza-claro);
+    border-radius:6px;
+    font-weight:700;
+    letter-spacing:.5px;
+    color:#41525d;
+  }
+
+  /* ---------------- TOAST ---------------- */
+  #toast{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%);
+    background:#323232;
+    color:#fff;
+    padding:12px 20px;
+    border-radius:8px;
+    font-size:14px;
+    display:none;
+    z-index:100;
+    max-width:80vw;
+    text-align:center;
+  }
+
+  /* ---------------- RESPONSIVO ---------------- */
+  @media (max-width: 800px){
+    #sidebar{
+      width:100%;
+      min-width:0;
+      position:absolute;
+      inset:0;
+      z-index:10;
+    }
+    #chat-area{
+      position:absolute;
+      inset:0;
+      z-index:20;
+      display:none;
+    }
+    #chat-area.mobile-open{ display:flex; }
+    #sidebar.mobile-hidden{ display:none; }
+    #back-btn{ display:inline-flex !important; }
+
+    /* Evita o zoom automático que iOS/Android fazem ao focar um campo
+       de texto com fonte menor que 16px (quebrava o layout no celular). */
+    #text-input, .modal-box input, .modal-box textarea{
+      font-size:16px;
+    }
+
+    /* Respeita o notch / barra de gestos em iPhones e Androids recentes. */
+    #me-header{
+      padding-top:calc(14px + env(safe-area-inset-top));
+    }
+    #chat-header{
+      padding-top:calc(12px + env(safe-area-inset-top));
+    }
+    #chat-footer, #chat-footer-disabled, #chat-footer-request{
+      padding-bottom:calc(10px + env(safe-area-inset-bottom));
+    }
+
+    /* Deixa o rodapé do chat (anexo + texto + microfone + enviar)
+       mais compacto em telas bem estreitas (ex: iPhone SE). */
+    #chat-footer{
+      gap:6px;
+      padding-left:10px;
+      padding-right:10px;
+    }
+    #record-btn, #send-btn, #attach-btn{
+      width:40px; height:40px;
+      font-size:16px;
+    }
+    #text-input{
+      padding:10px 14px;
+    }
+  }
+  #back-btn{
+    display:none;
+    background:none;
+    border:none;
+    color:#54656f;
+    font-size:20px;
+    cursor:pointer;
+    margin-right:4px;
+  }
+</style>
+</head>
+<body>
+
+<input type="file" id="input-attach" accept="*/*" style="display:none;">
+
+<div id="app">
+
+  <!-- ================= SIDEBAR ================= -->
+  <div id="sidebar">
+    <div id="me-header">
+      <div class="avatar" id="me-avatar" title="Editar perfil">?</div>
+      <div id="me-header-info">
+        <div class="label">Meu número (não pode ser alterado):</div>
+        <div id="me-number-row">
+          <div id="me-number">carregando...</div>
+          <button id="copy-btn" title="Copiar número">📋</button>
+          <button id="profile-btn" title="Editar perfil">✏️ Perfil</button>
+          <button id="switch-account-btn" title="Entrar em outro número (só com a chave de recuperação)">🔑 Entrar em outro número</button>
+          <button id="logout-btn" title="Sair deste número">🚪 Sair</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="add-area">
+      <div class="btn-row">
+        <button class="action-btn" id="open-private-modal">👤 + Privado</button>
+        <button class="action-btn secondary" id="open-group-modal">👥 + Grupo</button>
+      </div>
+    </div>
+
+    <div id="conversation-list">
+      <div id="empty-list-msg">Nenhuma conversa ainda.<br>Adicione um número para começar.</div>
+    </div>
+
+    <div id="sidebar-credit">Feito e programado por: Kauan_hexa</div>
+  </div>
+
+  <!-- ================= CHAT AREA ================= -->
+  <div id="chat-area">
+    <div id="chat-placeholder">
+      <h2>Papo</h2>
+      <p>Selecione uma conversa ou adicione um novo número para começar a conversar de verdade.</p>
+      <p id="app-credit">Feito e programado por: Kauan_hexa</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ================= MODAL: ADICIONAR PRIVADO ================= -->
+<div class="modal-overlay" id="modal-private">
+  <div class="modal-box">
+    <h3>👤 Nova conversa privada</h3>
+    <label>Número do contato</label>
+    <input type="text" id="input-private-number" placeholder="9XXXX-XXXX" maxlength="10">
+    <div class="hint">O número será verificado no servidor. Sua primeira mensagem vai como solicitação.</div>
+    <div class="modal-error" id="error-private"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="cancel-private">Cancelar</button>
+      <button class="btn-confirm" id="confirm-private">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: CRIAR GRUPO ================= -->
+<div class="modal-overlay" id="modal-group">
+  <div class="modal-box">
+    <h3>👥 Novo grupo</h3>
+    <label>Nome do grupo</label>
+    <input type="text" id="input-group-name" placeholder="Ex: Família, Trabalho...">
+    <label>Números dos membros (separados por vírgula)</label>
+    <textarea id="input-group-members" placeholder="91234-5678, 99876-5432"></textarea>
+    <div class="hint">Cada membro adicionado recebe um convite com Aceitar/Recusar.</div>
+    <div class="modal-error" id="error-group"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="cancel-group">Cancelar</button>
+      <button class="btn-confirm" id="confirm-group">Criar grupo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: PERFIL ================= -->
+<div class="modal-overlay" id="modal-profile">
+  <div class="modal-box">
+    <h3>✏️ Meu perfil</h3>
+
+    <label>Número (fixo, não pode ser mudado)</label>
+    <div id="profile-number-display">carregando...</div>
+
+    <label>Foto de perfil</label>
+    <div id="profile-avatar-row">
+      <div id="profile-avatar-preview">?</div>
+      <div id="profile-photo-actions">
+        <button id="choose-photo-btn" type="button">Escolher foto</button>
+        <button id="remove-photo-btn" type="button">Remover foto</button>
+      </div>
+      <input type="file" id="input-photo" accept="image/*" style="display:none;">
+    </div>
+
+    <label>Nome de exibição</label>
+    <input type="text" id="input-profile-name" placeholder="Como as pessoas vão te ver" maxlength="40">
+
+    <label>Chave de recuperação (recupera este número em qualquer navegador)</label>
+    <button class="btn-cancel" id="profile-show-recovery-btn" type="button" style="width:100%;">🔑 Ver / gerar minha chave</button>
+
+    <div class="modal-error" id="error-profile"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="cancel-profile">Cancelar</button>
+      <button class="btn-confirm" id="confirm-profile">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: BOAS-VINDAS (login/criar conta) ================= -->
+<div class="modal-overlay" id="modal-welcome">
+  <div class="modal-box">
+    <h3>👋 Bem-vindo ao PAPO</h3>
+    <p style="font-size:13.5px; color:var(--texto-cinza); margin-bottom:14px;">
+      Não encontrei nenhum número salvo neste navegador. Isso acontece
+      quando o cache/dados do navegador são limpos, ou quando você
+      abre o app em outro navegador/computador.
+    </p>
+
+    <div id="welcome-choice">
+      <div class="modal-actions" style="flex-direction:column;">
+        <button class="btn-confirm" id="welcome-create-btn" type="button">➕ Criar um número novo</button>
+        <button class="btn-cancel" id="welcome-login-btn" type="button">🔑 Já tenho um número — Entrar</button>
+      </div>
+    </div>
+
+    <div id="welcome-login-form" style="display:none;">
+      <label>Chave de recuperação</label>
+      <input type="text" id="input-login-key" placeholder="Ex: AXQM" maxlength="4" style="text-transform:uppercase; letter-spacing:2px; font-weight:700;">
+      <label>Seu número (opcional)</label>
+      <input type="text" id="input-login-number" placeholder="9XXXX-XXXX — só se quiser confirmar" maxlength="10">
+      <p style="font-size:12.5px; color:var(--texto-cinza); margin:4px 0 0;">
+        A chave sozinha já é suficiente para entrar. Só a chave sem o número entra normalmente — mas só o número, sem a chave, nunca entra.
+      </p>
+      <div class="modal-error" id="error-welcome-login"></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="welcome-login-back">Voltar</button>
+        <button class="btn-confirm" id="welcome-login-confirm">Entrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: CHAVE DE RECUPERAÇÃO ================= -->
+<div class="modal-overlay" id="modal-recovery-key">
+  <div class="modal-box">
+    <h3>🔑 Guarde sua chave de recuperação</h3>
+    <p style="font-size:13.5px; color:var(--texto-cinza); margin-bottom:10px;">
+      Esse é o ÚNICO jeito de recuperar seu número (e todos os seus
+      contatos/conversas) se você limpar o navegador, trocar de
+      computador ou desinstalar o app. O servidor NÃO guarda essa
+      chave em texto — se você perdê-la, ninguém consegue recuperar
+      por você. Anote em um lugar seguro agora.
+    </p>
+
+    <label>Seu número</label>
+    <div id="recovery-number-display" style="font-weight:700; font-size:16px; padding:8px 0;"></div>
+
+    <label>Chave de recuperação</label>
+    <div id="recovery-key-display" style="font-weight:700; font-size:15px; letter-spacing:.5px; background:#f4f6f8; border:1px solid var(--cinza-borda); border-radius:6px; padding:10px; word-break:break-all;"></div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" id="recovery-key-copy" type="button">📋 Copiar chave</button>
+      <button class="btn-confirm" id="recovery-key-continue" type="button">Já salvei, continuar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: EDITAR GRUPO ================= -->
+<div class="modal-overlay" id="modal-edit-group">
+  <div class="modal-box">
+    <h3>✏️ Editar grupo</h3>
+
+    <label>Foto do grupo</label>
+    <div id="group-avatar-row">
+      <div id="group-avatar-preview">?</div>
+      <div id="group-photo-actions">
+        <button id="choose-group-photo-btn" type="button">Escolher foto</button>
+        <button id="remove-group-photo-btn" type="button">Remover foto</button>
+      </div>
+      <input type="file" id="input-group-photo" accept="image/*" style="display:none;">
+    </div>
+
+    <label>Nome do grupo</label>
+    <input type="text" id="input-edit-group-name" placeholder="Nome do grupo" maxlength="60">
+
+    <label style="display:flex; align-items:center; justify-content:space-between;">
+      <span>Membros</span>
+      <button type="button" id="edit-group-add-member-btn" title="Adicionar membro" style="border:none; background:var(--verde-claro); color:#fff; width:26px; height:26px; min-width:26px; border-radius:50%; font-size:17px; font-weight:700; line-height:1; cursor:pointer;">+</button>
+    </label>
+    <div id="edit-group-members-list" style="max-height:150px; overflow-y:auto; border:1px solid var(--cinza-borda); border-radius:6px; padding:6px 10px; margin-bottom:10px; font-size:13.5px;"></div>
+
+    <div id="edit-group-add-member-form" style="display:none;">
+      <label>Números pra adicionar (separados por vírgula)</label>
+      <textarea id="input-edit-group-new-members" placeholder="91234-5678, 99876-5432"></textarea>
+      <div class="hint">Cada número adicionado recebe um convite com Aceitar/Recusar.</div>
+      <div class="modal-error" id="error-edit-group-add-member"></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="edit-group-add-member-cancel" type="button">Cancelar</button>
+        <button class="btn-confirm" id="edit-group-add-member-confirm" type="button">Convidar</button>
+      </div>
+    </div>
+
+    <div class="modal-error" id="error-edit-group"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="cancel-edit-group">Cancelar</button>
+      <button class="btn-confirm" id="confirm-edit-group">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: ENTRAR EM OUTRO NÚMERO (SÓ COM A CHAVE) ================= -->
+<div class="modal-overlay" id="modal-switch-account">
+  <div class="modal-box">
+    <h3>🔑 Entrar em outro número</h3>
+    <p style="font-size:13.5px; color:var(--texto-cinza); margin-bottom:14px;">
+      Digite a chave de recuperação do número que você quer usar. Você
+      sai do número atual (<span id="switch-account-current-number"></span>)
+      e entra nesse outro — sem precisar do número dele, só da chave.
+    </p>
+    <label>Chave de recuperação</label>
+    <input type="text" id="input-switch-account-key" placeholder="Ex: AXQM" maxlength="4" style="text-transform:uppercase; letter-spacing:2px; font-weight:700;">
+    <div class="modal-error" id="error-switch-account"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="cancel-switch-account">Cancelar</button>
+      <button class="btn-confirm" id="confirm-switch-account">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= TELA CHEIA: CHAMADA DE VOZ (CALL) ================= -->
+<div class="call-overlay" id="call-overlay">
+  <div id="call-content"></div>
+</div>
+<button id="call-floating-chip" class="call-floating-chip" title="Voltar para a chamada">
+  <span id="call-floating-chip-text">📞 Em chamada</span>
+</button>
+
+<div id="toast"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  // ============================================================
+  // ESTADO GLOBAL
+  //   Tudo relacionado a contatos/pedidos/grupos vem do SERVIDOR
+  //   (evento 'get-inbox'), nunca de localStorage. O front-end
+  //   apenas guarda meu proprio numero para reconectar.
+  // ============================================================
+  let myNumber = null;
+  let myProfile = { name: null, photo: null };
+  let privateChats = []; // vindo do servidor: {number, profile, online, status, requestedBy, iAmRequester}
+  let groups = [];       // vindo do servidor: {id, name, members, createdBy, myStatus}
+  let currentChat = null; // {type:'private', number} ou {type:'group', id}
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let recordingStream = null;
+  let pendingPhotoDataUrl = undefined; // undefined = nao mexeu, null = remover, string = nova foto
+  let editingGroupId = null;
+  let pendingGroupPhotoDataUrl = undefined; // undefined = nao mexeu, null = remover, string = nova foto
+
+  // "Está digitando..." — estado local, nunca salvo em disco.
+  let lastChatHeaderStatus = { text: '', mode: '' }; // status "de verdade" da conversa aberta
+  let outgoingTypingActive = false;
+  let outgoingTypingTimeout = null;
+  const typingState = {};       // private: { [numero]: true/false } | grupo: { [groupId]: Set(numeros) }
+  const typingClearTimers = {}; // trava de segurança caso o evento de "parou de digitar" se perca
+
+  // Chamada de voz (call) — 1 chamada por vez neste protótipo.
+  function freshCallState(){
+    return {
+      id: null,               // callId
+      role: null,             // 'caller' | 'callee'
+      state: null,            // 'ringing-out' | 'ringing-in' | 'active' | null
+      remoteNumber: null,
+      remoteName: null,
+      remotePhoto: null,
+      peer: null,             // RTCPeerConnection
+      localStream: null,      // microfone
+      screenStream: null,     // minha tela (quando eu compartilho)
+      screenSender: null,     // RTCRtpSender da minha tela
+      screenAudioSender: null, // RTCRtpSender do áudio da minha tela
+      remoteScreenStreamId: null, // id do stream da tela do outro lado
+      sharingScreen: false,
+      remoteScreenStream: null,
+      remoteSharingScreen: false,
+      micEnabled: true,
+      startTime: null,
+      ringTimer: null,
+      timeoutTimer: null,
+      durationTimer: null,
+      polite: false,          // usado para evitar colisão de renegociação (WebRTC "perfect negotiation")
+      selectedScreen: null,   // 'local' | 'remote' — qual tela mostrar quando os DOIS estão compartilhando ao mesmo tempo
+      screenGridView: false   // true = mostrando as duas telas ao mesmo tempo (tocou no meio pra "ver tudo")
+    };
+  }
+  let call = freshCallState();
+  const CALL_RTC_CONFIG = {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' }
+    ]
+  };
+
+  // Chamada de voz em GRUPO — mesh: uma RTCPeerConnection própria pra
+  // cada outro participante já presente na ligação.
+  function freshGroupCallState(){
+    return {
+      active: false,
+      callId: null,
+      groupId: null,
+      groupName: null,
+      state: null,                 // 'ringing-in' | 'active'
+      initiatorNumber: null, initiatorName: null, initiatorPhoto: null,
+      participants: new Map(),     // numero -> { name, photo, peer, sharingScreen, screenStream, screenSender }
+      localStream: null,
+      micEnabled: true,
+      screenStream: null,
+      sharingScreen: false,
+      ringTimer: null,
+      timeoutTimer: null,
+      durationTimer: null,
+      startTime: null,
+      simpleView: false,           // seta: false = grade com todo mundo, true = só quem ligou + você
+      selectedScreenOwner: null,   // 'me' ou o número de quem — qual tela mostrar quando vários compartilham
+      screenGridView: false        // true = mostrando todas as transmissões ao mesmo tempo (tocou no meio pra "ver tudo")
+    };
+  }
+  let groupCall = freshGroupCallState();
+
+  let notifAudio = null;
+  let callRingAudio = null;
+  let _pushRefreshScheduled = false;
+
+  const NUMBER_REGEX = /^9\d{4}-\d{4}$/;
+  const MAX_FILE_BYTES = 1024 * 1024 * 1024; // precisa bater com MAX_FILE_BYTES do server.js (1GB)
+
+  const socket = io();
+
+  try {
+    notifAudio = new Audio('/notification.wav');
+    notifAudio.preload = 'auto';
+    notifAudio.volume = 0.9;
+  } catch (_) { notifAudio = null; }
+
+  try {
+    callRingAudio = new Audio('/notification.wav');
+    callRingAudio.preload = 'auto';
+    callRingAudio.volume = 0.9;
+  } catch (_) { callRingAudio = null; }
+
+  // Toca a musica de notificacao a cada 2 segundos, em loop, ate
+  // a chamada ser atendida, recusada ou cancelada.
+  function startCallRingLoop(){
+    stopCallRingLoop();
+    const play = () => {
+      if (!callRingAudio) return;
+      try {
+        callRingAudio.currentTime = 0;
+        const p = callRingAudio.play();
+        if (p && p.catch) p.catch(() => {});
+      } catch (_) {}
+    };
+    play();
+    call.ringTimer = setInterval(play, 2000);
+  }
+
+  function stopCallRingLoop(){
+    if (call.ringTimer){ clearInterval(call.ringTimer); call.ringTimer = null; }
+    if (callRingAudio){
+      try { callRingAudio.pause(); callRingAudio.currentTime = 0; } catch (_) {}
+    }
+  }
+
+  function playNotificationSound() {
+    try {
+      if (!notifAudio) return;
+      const p = notifAudio.play();
+      if (p && p.catch) p.catch(() => {});
+    } catch (_) {}
+  }
+
+  // ============================================================
+  // ELEMENTOS DOM
+  // ============================================================
+  const meNumberEl = document.getElementById('me-number');
+  const meAvatarEl = document.getElementById('me-avatar');
+  const copyBtn = document.getElementById('copy-btn');
+  const profileBtn = document.getElementById('profile-btn');
+  const conversationList = document.getElementById('conversation-list');
+  const chatArea = document.getElementById('chat-area');
+  const toastEl = document.getElementById('toast');
+
+  const modalPrivate = document.getElementById('modal-private');
+  const modalGroup = document.getElementById('modal-group');
+  const modalProfile = document.getElementById('modal-profile');
+  const modalEditGroup = document.getElementById('modal-edit-group');
+  const modalWelcome = document.getElementById('modal-welcome');
+  const modalRecoveryKey = document.getElementById('modal-recovery-key');
+  const modalSwitchAccount = document.getElementById('modal-switch-account');
+
+  // ============================================================
+  // UTIL
+  // ============================================================
+  function showToast(msg, ms){
+    toastEl.textContent = msg;
+    toastEl.style.display = 'block';
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=>{ toastEl.style.display='none'; }, ms || 3500);
+  }
+
+  function formatTime(iso){
+    try{
+      const d = new Date(iso);
+      return d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    }catch(e){ return ''; }
+  }
+
+  function initialsFor(text){
+    return (text || '?').replace(/[^0-9A-Za-z]/g,'').slice(0,2).toUpperCase() || '?';
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function displayNameFor(number, profile){
+    if (profile && profile.name) return profile.name;
+    return number;
+  }
+
+  function avatarHtml(number, profile, extraClass){
+    const cls = extraClass ? `avatar ${extraClass}` : 'avatar';
+    if (profile && profile.photo){
+      return `<div class="${cls}"><img src="${profile.photo}" alt=""></div>`;
+    }
+    return `<div class="${cls}">${initialsFor((profile && profile.name) || number)}</div>`;
+  }
+
+  function findPrivateChat(number){
+    return privateChats.find(c => c.number === number) || null;
+  }
+
+  function findGroup(groupId){
+    return groups.find(g => g.id === groupId) || null;
+  }
+
+  // ============================================================
+  // REGISTRO NO SERVIDOR
+  // ============================================================
+  // Chama o servidor para (re)registrar o número já conhecido deste
+  // navegador (guardado no localStorage). Se `forceNew` for true,
+  // ignora o número salvo e pede para o servidor CRIAR um número novo
+  // (usado no botão "Criar um número novo" da tela de boas-vindas).
+  function register(forceNew){
+    const stored = forceNew ? null : localStorage.getItem('wa_my_number');
+    socket.emit('register', { number: stored }, (res) => {
+      if (!res || !res.ok){
+        showToast('Não foi possível conectar ao servidor.');
+        return;
+      }
+      myNumber = res.number;
+      myProfile = res.profile || { name: null, photo: null };
+      localStorage.setItem('wa_my_number', myNumber);
+      hideWelcomeModal();
+      renderMeHeader();
+      refreshInbox();
+      requestNotificationPermission();
+      subscribeForPush();
+
+      // Conta acabou de ser criada agora: o servidor manda a chave de
+      // recuperação em texto puro só essa UMA vez. Guarda local e
+      // mostra pro usuário anotar, porque depois disso o servidor
+      // nunca mais devolve o valor original (só compara o hash).
+      if (res.recoveryKey){
+        localStorage.setItem('wa_recovery_key', res.recoveryKey);
+        showRecoveryKeyModal(myNumber, res.recoveryKey);
+      }
+
+      // Se o app foi aberto através de uma notificação (ex: o navegador
+      // tinha que abrir uma janela nova), abre a conversa certa direto.
+      if (window.location.search && !register._openedFromUrl){
+        register._openedFromUrl = true;
+        openChatFromUrl(window.location.href);
+      }
+    });
+  }
+
+  // ============================================================
+  // BOAS-VINDAS / LOGIN COM CHAVE DE RECUPERAÇÃO
+  //
+  // Sempre que este navegador não tem nenhum número salvo (primeira
+  // visita, ou porque o cache/localStorage foi limpo), NÃO criamos
+  // um número novo automaticamente. Em vez disso mostramos essa tela,
+  // para a pessoa escolher entre criar um número novo ou recuperar um
+  // número que ela já tinha, usando a chave de recuperação salva.
+  // Isso é o que garante que um número, uma vez criado, nunca se
+  // perde só porque o navegador foi limpo.
+  // ============================================================
+  const welcomeChoice = document.getElementById('welcome-choice');
+  const welcomeLoginForm = document.getElementById('welcome-login-form');
+  const welcomeCreateBtn = document.getElementById('welcome-create-btn');
+  const welcomeLoginBtn = document.getElementById('welcome-login-btn');
+  const welcomeLoginBack = document.getElementById('welcome-login-back');
+  const welcomeLoginConfirm = document.getElementById('welcome-login-confirm');
+  const inputLoginNumber = document.getElementById('input-login-number');
+  const inputLoginKey = document.getElementById('input-login-key');
+  const errorWelcomeLogin = document.getElementById('error-welcome-login');
+
+  function showWelcomeModal(){
+    welcomeChoice.style.display = '';
+    welcomeLoginForm.style.display = 'none';
+    errorWelcomeLogin.textContent = '';
+    modalWelcome.classList.add('show');
+  }
+  function hideWelcomeModal(){
+    modalWelcome.classList.remove('show');
+  }
+
+  welcomeCreateBtn.addEventListener('click', () => {
+    register(true); // true = ignora qualquer resquício salvo, pede número novo
+  });
+
+  welcomeLoginBtn.addEventListener('click', () => {
+    welcomeChoice.style.display = 'none';
+    welcomeLoginForm.style.display = '';
+    errorWelcomeLogin.textContent = '';
+  });
+
+  welcomeLoginBack.addEventListener('click', () => {
+    welcomeChoice.style.display = '';
+    welcomeLoginForm.style.display = 'none';
+  });
+
+  function tryLoginWithKey(number, key, onError){
+    socket.emit('login-with-key', { number, recoveryKey: key }, (res) => {
+      if (!res || !res.ok){
+        onError((res && res.reason) || 'Não foi possível entrar.');
+        return;
+      }
+      myNumber = res.number;
+      myProfile = res.profile || { name: null, photo: null };
+      localStorage.setItem('wa_my_number', myNumber);
+      localStorage.setItem('wa_recovery_key', key.trim().toUpperCase());
+      hideWelcomeModal();
+      renderMeHeader();
+      refreshInbox();
+      requestNotificationPermission();
+      subscribeForPush();
+      showToast('Login feito! Seus contatos e conversas voltaram.');
+    });
+  }
+
+  welcomeLoginConfirm.addEventListener('click', () => {
+    const number = inputLoginNumber.value.trim().toUpperCase();
+    const key = inputLoginKey.value.trim().toUpperCase();
+
+    // A chave é obrigatória — sozinha ela já basta para entrar.
+    if (!key){
+      errorWelcomeLogin.textContent = 'Digite sua chave de recuperação.';
+      return;
+    }
+    // O número é opcional. Se a pessoa preencheu, precisa estar
+    // no formato certo (mas nunca entra só com o número, sem chave).
+    if (number && !NUMBER_REGEX.test(number)){
+      errorWelcomeLogin.textContent = 'Número inválido. Use o formato 9XXXX-XXXX (ou deixe em branco).';
+      return;
+    }
+    errorWelcomeLogin.textContent = '';
+    tryLoginWithKey(number, key, (reason) => { errorWelcomeLogin.textContent = reason; });
+  });
+
+  // ============================================================
+  // MODAL: MOSTRAR A CHAVE DE RECUPERAÇÃO PRA PESSOA ANOTAR
+  // ============================================================
+  const recoveryNumberDisplay = document.getElementById('recovery-number-display');
+  const recoveryKeyDisplay = document.getElementById('recovery-key-display');
+  const recoveryKeyCopyBtn = document.getElementById('recovery-key-copy');
+  const recoveryKeyContinueBtn = document.getElementById('recovery-key-continue');
+
+  function showRecoveryKeyModal(number, key){
+    recoveryNumberDisplay.textContent = number;
+    recoveryKeyDisplay.textContent = key;
+    modalRecoveryKey.classList.add('show');
+  }
+
+  recoveryKeyCopyBtn.addEventListener('click', () => {
+    const key = recoveryKeyDisplay.textContent;
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(key).then(() => showToast('Chave copiada!'));
+    } else {
+      const tmp = document.createElement('textarea');
+      tmp.value = key;
+      document.body.appendChild(tmp);
+      tmp.select();
+      document.execCommand('copy');
+      document.body.removeChild(tmp);
+      showToast('Chave copiada!');
+    }
+  });
+
+  recoveryKeyContinueBtn.addEventListener('click', () => {
+    modalRecoveryKey.classList.remove('show');
+  });
+
+  // Registra o service worker assim que o script carrega (não depende
+  // de já estar conectado/registrado no servidor)
+  initServiceWorker();
+
+  // ============================================================
+  // NOTIFICAÇÕES DO NAVEGADOR (aparecem quando chega mensagem nova
+  // e a pessoa não está olhando aquela conversa naquele momento)
+  //
+  // Além da notificação simples (só funciona com a aba aberta),
+  // também registramos um SERVICE WORKER + PUSH: assim as
+  // notificações chegam mesmo com o site/navegador FECHADO,
+  // tanto no celular quanto no PC. Tocar na notificação abre a
+  // conversa certa direto.
+  // ============================================================
+  let swRegistration = null;
+
+  function requestNotificationPermission(){
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default'){
+      Notification.requestPermission().then((perm) => {
+        if (perm === 'granted') subscribeForPush();
+      }).catch(() => {});
+    } else if (Notification.permission === 'granted'){
+      subscribeForPush();
+    }
+  }
+
+  // Converte a chave publica VAPID (base64 URL-safe) para o formato
+  // que a Push API do navegador espera (Uint8Array)
+  function urlBase64ToUint8Array(base64String){
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; i++){
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
+  async function initServiceWorker(){
+    if (!('serviceWorker' in navigator)) return;
+    try{
+      swRegistration = await navigator.serviceWorker.register('/sw.js');
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'open-chat'){
+          openChatFromUrl(event.data.url);
+        } else if (event.data && event.data.type === 'refresh-push-subscription') {
+          const sub = event.data.subscription;
+          if (!sub || !myNumber) return;
+          fetch('/api/push/refresh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ number: myNumber, subscription: sub })
+          }).catch(() => {});
+        }
+      });
+      if (Notification.permission === 'granted') subscribeForPush();
+    }catch(err){
+      console.error('Erro ao registrar service worker', err);
+    }
+  }
+
+  async function subscribeForPush(){
+    if (!myNumber) return;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    if (!swRegistration){
+      try{ swRegistration = await navigator.serviceWorker.ready; }
+      catch(err){ return; }
+    }
+    try{
+      let subscription = await swRegistration.pushManager.getSubscription();
+      if (!subscription){
+        const res = await fetch('/vapid-public-key');
+        const { publicKey } = await res.json();
+        subscription = await swRegistration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey)
+        });
+      }
+      await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ number: myNumber, subscription })
+      });
+      if (!_pushRefreshScheduled) {
+        _pushRefreshScheduled = true;
+        setInterval(() => {
+          if (myNumber) subscribeForPush();
+        }, 12 * 60 * 60 * 1000);
+      }
+    }catch(err){
+      console.error('Erro ao se inscrever para notificações push', err);
+    }
+  }
+
+  // Abre a conversa indicada por uma URL tipo "/?openPrivate=91234-5678"
+  // ou "/?openGroup=<id>" (usada tanto ao clicar numa notificação quanto
+  // ao abrir o app através dela).
+  function openChatFromUrl(url){
+    try{
+      const parsed = new URL(url, window.location.origin);
+      const privateNumber = parsed.searchParams.get('openPrivate');
+      const groupId = parsed.searchParams.get('openGroup');
+      if (privateNumber){
+        openPrivateChat(privateNumber);
+      } else if (groupId){
+        const g = findGroup(groupId);
+        if (g) openGroupChat(g);
+        else socket.emit('get-inbox', (res) => {
+          if (res && res.ok){
+            groups = res.groups;
+            privateChats = res.privateChats;
+            const grp = findGroup(groupId);
+            if (grp) openGroupChat(grp);
+          }
+        });
+      }
+    }catch(err){ /* URL invalida, ignora */ }
+  }
+
+  function messagePreviewText(message){
+    if (message.deleted) return 'Mensagem apagada';
+    if (message.type === 'text') return message.content;
+    if (message.type === 'audio') return '🎤 Mensagem de voz';
+    if (message.type === 'file'){
+      const mime = ((message.content && message.content.mimetype) || '').toLowerCase();
+      if (mime.startsWith('image/')) return '📷 Foto';
+      if (mime.startsWith('video/')) return '🎥 Vídeo';
+      if (mime.startsWith('audio/')) return '🎤 Áudio';
+      return `📄 ${(message.content && message.content.name) || 'Arquivo'}`;
+    }
+    return 'Nova mensagem';
+  }
+
+  function sendBrowserNotification(title, body, onClick){
+    playNotificationSound();
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+    try{
+      const notification = new Notification(title, {
+        body,
+        tag: 'papo-browser-msg',
+        requireInteraction: true,
+        vibrate: [200, 100, 200, 100, 400]
+      });
+      if (onClick){
+        notification.onclick = () => {
+          window.focus();
+          onClick();
+          notification.close();
+        };
+      }
+    }catch(err){
+      console.error('Erro ao mostrar notificação do navegador', err);
+    }
+  }
+
+  function renderMeHeader(){
+    meNumberEl.textContent = myProfile.name ? `${myProfile.name} · ${myNumber}` : myNumber;
+    if (myProfile.photo){
+      meAvatarEl.innerHTML = `<img src="${myProfile.photo}" alt="">`;
+    } else {
+      meAvatarEl.textContent = initialsFor(myProfile.name || myNumber);
+    }
+  }
+
+  copyBtn.addEventListener('click', () => {
+    if (!myNumber) return;
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(myNumber).then(()=> showToast('Número copiado!'));
+    } else {
+      const tmp = document.createElement('textarea');
+      tmp.value = myNumber;
+      document.body.appendChild(tmp);
+      tmp.select();
+      document.execCommand('copy');
+      document.body.removeChild(tmp);
+      showToast('Número copiado!');
+    }
+  });
+
+  socket.on('connect', () => {
+    const stored = localStorage.getItem('wa_my_number');
+    if (stored){
+      register();
+    } else {
+      // Sem número salvo neste navegador: NÃO cria um número novo
+      // sozinho (isso é o que fazia a pessoa "perder" a conta ao
+      // limpar o cache). Em vez disso, deixa a pessoa escolher entre
+      // criar um número novo ou entrar com a chave de recuperação.
+      showWelcomeModal();
+    }
+  });
+  socket.io.on('reconnect', () => {
+    const stored = localStorage.getItem('wa_my_number');
+    if (stored){
+      register();
+      if (myNumber) subscribeForPush();
+    }
+  });
+
+  // ============================================================
+  // CAIXA DE ENTRADA (busca tudo do servidor: conversas, pedidos,
+  // grupos e convites)
+  // ============================================================
+  function refreshInbox(opts){
+    const skipFooterRefresh = !!(opts && opts.skipFooterRefresh);
+    socket.emit('get-inbox', (res) => {
+      if (!res || !res.ok) return;
+      privateChats = res.privateChats;
+      groups = res.groups;
+      renderConversationList();
+      // Se a conversa aberta mudou de status (ex: acabou de ser aceita/bloqueada),
+      // atualiza o rodapé do chat sem perder o histórico na tela.
+      // OBS: isso reabre a conversa inteira (recarrega mensagens e recria o
+      // campo de texto), então só fazemos isso quando algo relevante ao
+      // status da conversa realmente pode ter mudado (aceitar/recusar,
+      // bloquear, convites de grupo). Uma mensagem normal chegando/saindo
+      // NÃO deve disparar isso, senão o campo de texto some enquanto a
+      // pessoa está digitando (e a mensagem "pisca" na tela).
+      if (!skipFooterRefresh && currentChat) refreshCurrentChatFooter();
+    });
+  }
+
+  // ============================================================
+  // PRESENÇA (online/offline) e PERFIL (nome/foto mudaram)
+  // ============================================================
+  socket.on('presence', ({ number, online }) => {
+    const c = findPrivateChat(number);
+    if (c) c.online = online;
+    updateStatusInUI(number, online);
+  });
+
+  socket.on('profile-updated', (profile) => {
+    const c = findPrivateChat(profile.number);
+    if (c) c.profile = profile;
+    renderConversationList();
+    if (currentChat && currentChat.type === 'private' && currentChat.number === profile.number){
+      const nameEl = document.getElementById('chat-header-name');
+      const avatarWrap = document.querySelector('#chat-header .avatar');
+      if (nameEl) nameEl.textContent = displayNameFor(profile.number, profile);
+      if (avatarWrap) avatarWrap.outerHTML = avatarHtml(profile.number, profile);
+    }
+  });
+
+  function updateStatusInUI(number, online){
+    const dot = document.querySelector(`.conv-item[data-type="private"][data-id="${CSS.escape(number)}"] .status-dot`);
+    if (dot) dot.textContent = online ? '🟢' : '⚪';
+
+    if (currentChat && currentChat.type === 'private' && currentChat.number === number){
+      const statusEl = document.getElementById('chat-header-status');
+      if (statusEl && statusEl.dataset.mode === 'presence'){
+        const text = online ? '🟢 Online' : '⚪ Offline';
+        lastChatHeaderStatus = { text, mode: 'presence' };
+        // Não sobrescreve "digitando..." se estiver aparecendo agora.
+        if (statusEl.dataset.typing !== '1'){
+          statusEl.textContent = text;
+        }
+      }
+    }
+
+    if (!online) maybeEndCallForOfflineNumber(number);
+    if (!online) maybeEndGroupCallForOfflineNumber(number);
+  }
+
+  // ============================================================
+  // RENDERIZAÇÃO DA LISTA DE CONVERSAS
+  // ============================================================
+  function renderConversationList(){
+    conversationList.innerHTML = '';
+
+    if (privateChats.length === 0 && groups.length === 0){
+      const empty = document.createElement('div');
+      empty.id = 'empty-list-msg';
+      empty.innerHTML = 'Nenhuma conversa ainda.<br>Adicione um número para começar.';
+      conversationList.appendChild(empty);
+      return;
+    }
+
+    privateChats.forEach(c => {
+      const item = document.createElement('div');
+      item.className = 'conv-item';
+      item.dataset.type = 'private';
+      item.dataset.id = c.number;
+
+      const isIncomingPending = c.status === 'pending' && !c.iAmRequester;
+      const isOutgoingPending = c.status === 'pending' && c.iAmRequester;
+      const isBlocked = c.status === 'blocked';
+
+      if (isIncomingPending) item.classList.add('pending-in');
+      if (currentChat && currentChat.type === 'private' && currentChat.number === c.number){
+        item.classList.add('active');
+      }
+
+      const name = displayNameFor(c.number, c.profile);
+      let subHtml;
+      if (isIncomingPending){
+        subHtml = `<div class="conv-sub highlight">🔔 Quer conversar com você</div>
+          <div class="request-actions">
+            <button class="btn-accept" data-accept-private="${c.number}">Aceitar</button>
+            <button class="btn-reject" data-reject-private="${c.number}">Recusar</button>
+          </div>`;
+      } else if (isOutgoingPending){
+        subHtml = `<div class="conv-sub highlight">⏳ Aguardando confirmação...</div>`;
+      } else if (isBlocked){
+        subHtml = c.iAmRequester
+          ? `<div class="conv-sub blocked">🚫 Você foi bloqueado</div>`
+          : `<div class="conv-sub blocked">🚫 Você bloqueou este número</div>`;
+      } else {
+        subHtml = `<div class="conv-sub">Conversa privada</div>`;
+      }
+
+      item.innerHTML = `
+        ${avatarHtml(c.number, c.profile)}
+        <div class="conv-info">
+          <div class="conv-title-row">
+            <span class="conv-name">${escapeHtml(name)}</span>
+            ${isIncomingPending || isBlocked ? '' : `<span class="status-dot">${c.online ? '🟢' : '⚪'}</span>`}
+          </div>
+          ${subHtml}
+        </div>
+      `;
+
+      if (!isIncomingPending){
+        item.addEventListener('click', () => openPrivateChat(c.number));
+      } else {
+        // O item de solicitacao abre a conversa (modo leitura) se clicar fora dos botoes
+        item.addEventListener('click', (e) => {
+          if (e.target.closest('button')) return;
+          openPrivateChat(c.number);
+        });
+      }
+
+      conversationList.appendChild(item);
+    });
+
+    groups.forEach(g => {
+      const item = document.createElement('div');
+      item.className = 'conv-item';
+      item.dataset.type = 'group';
+      item.dataset.id = g.id;
+
+      const isPendingInvite = g.myStatus === 'pending';
+      if (isPendingInvite) item.classList.add('pending-in');
+      if (currentChat && currentChat.type === 'group' && currentChat.id === g.id){
+        item.classList.add('active');
+      }
+
+      let subHtml;
+      if (isPendingInvite){
+        subHtml = `<div class="conv-sub highlight">🔔 Convite de grupo</div>
+          <div class="request-actions">
+            <button class="btn-accept" data-accept-group="${g.id}">Aceitar</button>
+            <button class="btn-reject" data-reject-group="${g.id}">Recusar</button>
+          </div>`;
+      } else {
+        const acceptedCount = g.members.filter(m => m.status === 'accepted').length;
+        subHtml = `<div class="conv-sub">${acceptedCount} membro${acceptedCount === 1 ? '' : 's'}</div>`;
+      }
+
+      item.innerHTML = `
+        ${avatarHtml(g.id, { name: g.name, photo: g.photo }, 'group')}
+        <div class="conv-info">
+          <div class="conv-title-row">
+            <span class="conv-name">${escapeHtml(g.name)}</span>
+          </div>
+          ${subHtml}
+        </div>
+      `;
+
+      if (!isPendingInvite){
+        item.addEventListener('click', () => openGroupChat(g));
+      }
+
+      conversationList.appendChild(item);
+    });
+
+    // Liga os botoes de aceitar/recusar (privado e grupo)
+    conversationList.querySelectorAll('[data-accept-private]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        respondPrivateRequest(btn.dataset.acceptPrivate, 'accept');
+      });
+    });
+    conversationList.querySelectorAll('[data-reject-private]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        respondPrivateRequest(btn.dataset.rejectPrivate, 'reject');
+      });
+    });
+    conversationList.querySelectorAll('[data-accept-group]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        respondGroupInvite(btn.dataset.acceptGroup, 'accept');
+      });
+    });
+    conversationList.querySelectorAll('[data-reject-group]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        respondGroupInvite(btn.dataset.rejectGroup, 'reject');
+      });
+    });
+  }
+
+  // ============================================================
+  // RESPONDER SOLICITAÇÃO PRIVADA / CONVITE DE GRUPO
+  // ============================================================
+  function respondPrivateRequest(number, action){
+    socket.emit('respond-private-request', { from: number, action }, (res) => {
+      if (!res || !res.ok){
+        showToast((res && res.reason) || 'Erro ao responder solicitação.');
+        return;
+      }
+      if (action === 'accept'){
+        showToast(`Você aceitou a conversa com ${number}.`);
+        refreshInbox();
+        openPrivateChat(number);
+      } else {
+        showToast(`Você recusou e bloqueou ${number}.`);
+        refreshInbox();
+      }
+    });
+  }
+
+  function respondGroupInvite(groupId, action){
+    socket.emit('respond-group-invite', { groupId, action }, (res) => {
+      if (!res || !res.ok){
+        showToast((res && res.reason) || 'Erro ao responder convite.');
+        return;
+      }
+      if (action === 'accept'){
+        showToast('Você entrou no grupo!');
+        refreshInbox();
+        const g = res.group;
+        if (g) openGroupChat(g);
+      } else {
+        showToast('Você recusou o convite e bloqueou quem criou o grupo.');
+        refreshInbox();
+      }
+    });
+  }
+
+  // ============================================================
+  // ABRIR CONVERSA PRIVADA
+  //   O rodape (composer / aviso / botoes) muda de acordo com o
+  //   status do relacionamento retornado pelo servidor.
+  // ============================================================
+  function openPrivateChat(number){
+    stopTypingNow();
+    const chatInfo = findPrivateChat(number) || { number, profile: null, online: false, status: null };
+    currentChat = { type: 'private', number };
+    renderConversationList();
+
+    socket.emit('get-history', { withNumber: number }, (res) => {
+      if (!res || !res.ok){
+        showToast((res && res.reason) || 'Erro ao carregar histórico.');
+        return;
+      }
+
+      renderChatShell({
+        kind: 'private',
+        number,
+        profile: chatInfo.profile,
+        online: chatInfo.online,
+        relationship: res.relationship,
+        blockedByThem: res.blockedByThem,
+        blockedByMe: res.blockedByMe
+      });
+      updateTypingStatusUI();
+
+      const container = document.getElementById('messages');
+      container.innerHTML = '';
+      res.messages.forEach(m => appendMessageToDOM(m, false));
+
+      if (res.blockedByThem){
+        appendSystemBanner('Você foi bloqueado por este usuário. Não é possível enviar mensagens.', true);
+      } else if (res.blockedByMe){
+        appendSystemBanner('Você bloqueou este número. Não é possível enviar mensagens.', true);
+      } else if (res.relationship && res.relationship.status === 'pending' && res.relationship.requestedBy === myNumber){
+        appendSystemBanner('Solicitação enviada. Aguarde o contato aceitar para continuar a conversa.', false);
+      } else if (res.relationship && res.relationship.status === 'pending' && res.relationship.requestedBy !== myNumber){
+        appendSystemBanner('Este número quer iniciar uma conversa com você. Aceite ou recuse abaixo.', false);
+      }
+
+      scrollMessagesToBottom();
+    });
+  }
+
+  // Atualiza somente o rodape/banners da conversa aberta (usado apos refreshInbox)
+  function refreshCurrentChatFooter(){
+    if (!currentChat) return;
+    if (currentChat.type === 'private'){
+      // Reabrir recarrega historico + estado corretamente
+      openPrivateChat(currentChat.number);
+    }
+  }
+
+  // ============================================================
+  // ABRIR CONVERSA DE GRUPO
+  // ============================================================
+  function openGroupChat(group){
+    stopTypingNow();
+    currentChat = { type: 'group', id: group.id, name: group.name, photo: group.photo || null, members: group.members };
+    renderConversationList();
+
+    renderChatShell({
+      kind: 'group',
+      id: group.id,
+      name: group.name,
+      photo: group.photo || null,
+      members: group.members
+    });
+    updateTypingStatusUI();
+
+    socket.emit('get-group-history', { groupId: group.id }, (res) => {
+      const container = document.getElementById('messages');
+      if (!container) return;
+      container.innerHTML = '';
+      if (res && res.ok){
+        res.messages.forEach(m => appendMessageToDOM(m, true));
+        scrollMessagesToBottom();
+      } else {
+        showToast((res && res.reason) || 'Erro ao carregar histórico.');
+      }
+    });
+  }
+
+  // ============================================================
+  // ESQUELETO DA JANELA DE CHAT (varia conforme o status)
+  // ============================================================
+  function renderChatShell(info){
+    chatArea.classList.add('mobile-open');
+    document.getElementById('sidebar').classList.add('mobile-hidden');
+
+    const isGroup = info.kind === 'group';
+    const title = isGroup ? info.name : displayNameFor(info.number, info.profile);
+    const headerAvatar = isGroup
+      ? avatarHtml(info.id, { name: info.name, photo: info.photo }, 'group')
+      : avatarHtml(info.number, info.profile);
+
+    let statusText, statusMode;
+    if (isGroup){
+      const acceptedCount = info.members.filter(m => m.status === 'accepted').length;
+      statusText = `${acceptedCount} membro${acceptedCount === 1 ? '' : 's'}`;
+      statusMode = 'group';
+    } else {
+      statusText = info.online ? '🟢 Online' : '⚪ Offline';
+      statusMode = 'presence';
+    }
+
+    // Guarda o status "de verdade" (online/offline ou nº de membros) para
+    // conseguirmos restaurá-lo quando "fulano está digitando..." parar de
+    // aparecer no lugar dele.
+    lastChatHeaderStatus = { text: statusText, mode: statusMode };
+
+    // Decide o que aparece embaixo: composer normal, aviso desabilitado,
+    // ou barra de aceitar/recusar.
+    let footerHtml;
+    if (isGroup){
+      footerHtml = `
+        <div id="chat-footer">
+          <button id="attach-btn" title="Anexar arquivo">📎</button>
+          <input type="text" id="text-input" placeholder="Digite uma mensagem" autocomplete="off">
+          <div id="recording-indicator">🔴 Gravando...</div>
+          <button id="record-btn" title="Gravar áudio">🎙️</button>
+          <button id="send-btn" title="Enviar">➤</button>
+        </div>`;
+    } else if (info.blockedByThem){
+      footerHtml = `<div id="chat-footer-disabled">🚫 Você foi bloqueado por este usuário e não pode enviar mensagens.</div>`;
+    } else if (info.blockedByMe){
+      footerHtml = `<div id="chat-footer-disabled">🚫 Você bloqueou este número. Desbloqueie fora deste app para conversar novamente.</div>`;
+    } else if (info.relationship && info.relationship.status === 'pending' && info.relationship.requestedBy === myNumber){
+      footerHtml = `<div id="chat-footer-disabled">⏳ Aguardando o contato aceitar sua solicitação de conversa...</div>`;
+    } else if (info.relationship && info.relationship.status === 'pending' && info.relationship.requestedBy !== myNumber){
+      footerHtml = `
+        <div id="chat-footer-request">
+          <span>Aceitar conversa com ${escapeHtml(info.number)}?</span>
+          <div class="request-actions">
+            <button class="btn-accept" id="chat-accept-request">Aceitar</button>
+            <button class="btn-reject" id="chat-reject-request">Recusar</button>
+          </div>
+        </div>`;
+    } else {
+      footerHtml = `
+        <div id="chat-footer">
+          <button id="attach-btn" title="Anexar arquivo">📎</button>
+          <input type="text" id="text-input" placeholder="Digite uma mensagem" autocomplete="off">
+          <div id="recording-indicator">🔴 Gravando...</div>
+          <button id="record-btn" title="Gravar áudio">🎙️</button>
+          <button id="send-btn" title="Enviar">➤</button>
+        </div>`;
+    }
+
+    chatArea.innerHTML = `
+      <div id="chat-header">
+        <button id="back-btn">←</button>
+        ${headerAvatar}
+        <div id="chat-header-info">
+          <div id="chat-header-name">${escapeHtml(title)}</div>
+          <div id="chat-header-status" data-mode="${statusMode}">${statusText}</div>
+        </div>
+        ${isGroup
+          ? `<button id="chat-header-call-btn" title="Ligar para o grupo">📞</button><button id="chat-header-edit-btn" title="Editar grupo">✏️</button>`
+          : `<button id="chat-header-call-btn" title="Ligar">📞</button>`}
+      </div>
+      <div id="messages"></div>
+      ${footerHtml}
+    `;
+
+    document.getElementById('back-btn').addEventListener('click', () => {
+      chatArea.classList.remove('mobile-open');
+      document.getElementById('sidebar').classList.remove('mobile-hidden');
+    });
+
+    if (isGroup){
+      const editBtn = document.getElementById('chat-header-edit-btn');
+      const headerAvatarEl = document.querySelector('#chat-header .avatar');
+      if (editBtn) editBtn.addEventListener('click', () => openEditGroupModal(info.id));
+      if (headerAvatarEl){
+        headerAvatarEl.style.cursor = 'pointer';
+        headerAvatarEl.addEventListener('click', () => openEditGroupModal(info.id));
+      }
+    }
+
+    const textInput = document.getElementById('text-input');
+    const sendBtn = document.getElementById('send-btn');
+    const recordBtn = document.getElementById('record-btn');
+
+    if (textInput && sendBtn){
+      sendBtn.addEventListener('click', sendTextMessage);
+      textInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter'){ sendTextMessage(); }
+      });
+      textInput.addEventListener('input', handleTypingInput);
+    }
+    if (recordBtn){
+      recordBtn.addEventListener('click', toggleRecording);
+    }
+
+    const attachBtn = document.getElementById('attach-btn');
+    if (attachBtn){
+      attachBtn.addEventListener('click', () => {
+        const input = document.getElementById('input-attach');
+        if (input) input.click();
+      });
+    }
+
+    const callBtn = document.getElementById('chat-header-call-btn');
+    if (callBtn){
+      callBtn.addEventListener('click', () => {
+        if (currentChat && currentChat.type === 'group') startGroupCall();
+        else startOutgoingCall();
+      });
+    }
+
+    const acceptBtn = document.getElementById('chat-accept-request');
+    const rejectBtn = document.getElementById('chat-reject-request');
+    if (acceptBtn) acceptBtn.addEventListener('click', () => respondPrivateRequest(info.number, 'accept'));
+    if (rejectBtn) rejectBtn.addEventListener('click', () => respondPrivateRequest(info.number, 'reject'));
+  }
+
+  function appendSystemBanner(text, isBlocked){
+    const container = document.getElementById('messages');
+    if (!container) return;
+    const div = document.createElement('div');
+    div.className = 'system-banner' + (isBlocked ? ' blocked' : '');
+    div.textContent = text;
+    container.appendChild(div);
+  }
+
+  function scrollMessagesToBottom(){
+    const container = document.getElementById('messages');
+    if (container) container.scrollTop = container.scrollHeight;
+  }
+
+  // ============================================================
+  // ENVIO DE MENSAGEM DE TEXTO
+  //   -> A UNICA forma de uma mensagem sair da tela do usuario e
+  //      clicando em Enviar (ou pressionando Enter) aqui.
+  //   -> Ela SÓ aparece na tela (mesmo para quem enviou) quando o
+  //      SERVIDOR confirmar via evento 'private-message'/'group-message'.
+  // ============================================================
+  function sendTextMessage(){
+    const input = document.getElementById('text-input');
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text || !currentChat) return;
+
+    input.value = '';
+    stopTypingNow();
+
+    if (currentChat.type === 'private'){
+      socket.emit('private-message', { to: currentChat.number, type: 'text', content: text }, (res) => {
+        if (!res || !res.ok){
+          showToast((res && res.reason) || 'Erro ao enviar mensagem.');
+          if (res && res.blocked) refreshInbox();
+        }
+      });
+    } else if (currentChat.type === 'group'){
+      socket.emit('group-message', { groupId: currentChat.id, type: 'text', content: text }, (res) => {
+        if (!res || !res.ok){
+          showToast((res && res.reason) || 'Erro ao enviar mensagem.');
+        }
+      });
+    }
+  }
+
+  // ============================================================
+  // "ESTÁ DIGITANDO..." (envio)
+  //   -> Enquanto a pessoa digita, avisamos o servidor a cada troca
+  //      de estado (parado -> digitando) e paramos automaticamente
+  //      2s depois que ela para de teclar (ou ao enviar a mensagem).
+  // ============================================================
+  function emitTyping(isTyping){
+    if (!currentChat) return;
+    if (currentChat.type === 'private'){
+      socket.emit('typing', { to: currentChat.number, isTyping });
+    } else if (currentChat.type === 'group'){
+      socket.emit('typing', { groupId: currentChat.id, isTyping });
+    }
+  }
+
+  function handleTypingInput(){
+    if (!currentChat) return;
+    if (!outgoingTypingActive){
+      outgoingTypingActive = true;
+      emitTyping(true);
+    }
+    clearTimeout(outgoingTypingTimeout);
+    outgoingTypingTimeout = setTimeout(() => {
+      outgoingTypingActive = false;
+      emitTyping(false);
+    }, 2000);
+  }
+
+  function stopTypingNow(){
+    clearTimeout(outgoingTypingTimeout);
+    if (outgoingTypingActive){
+      outgoingTypingActive = false;
+      emitTyping(false);
+    }
+  }
+
+  // ============================================================
+  // "ESTÁ DIGITANDO..." (recebimento)
+  // ============================================================
+  socket.on('typing', ({ from, groupId, isTyping }) => {
+    const key = groupId || from;
+    if (typingClearTimers[key]) clearTimeout(typingClearTimers[key]);
+
+    if (groupId){
+      if (!typingState[groupId]) typingState[groupId] = new Set();
+      if (isTyping) typingState[groupId].add(from); else typingState[groupId].delete(from);
+    } else {
+      typingState[from] = !!isTyping;
+    }
+
+    // Trava de segurança: se por algum motivo o evento "parou de digitar"
+    // nunca chegar (ex: a pessoa fechou o app no meio), removemos o aviso
+    // sozinhos depois de alguns segundos.
+    if (isTyping){
+      typingClearTimers[key] = setTimeout(() => {
+        if (groupId){ if (typingState[groupId]) typingState[groupId].delete(from); }
+        else typingState[from] = false;
+        updateTypingStatusUI();
+      }, 5000);
+    }
+
+    updateTypingStatusUI();
+  });
+
+  function updateTypingStatusUI(){
+    if (!currentChat) return;
+    const statusEl = document.getElementById('chat-header-status');
+    if (!statusEl) return;
+
+    if (currentChat.type === 'private'){
+      if (typingState[currentChat.number]){
+        statusEl.textContent = 'digitando...';
+        statusEl.dataset.typing = '1';
+        return;
+      }
+    } else if (currentChat.type === 'group'){
+      const typers = typingState[currentChat.id];
+      if (typers && typers.size > 0){
+        statusEl.textContent = `${Array.from(typers).join(', ')} digitando...`;
+        statusEl.dataset.typing = '1';
+        return;
+      }
+    }
+
+    // Ninguém digitando agora: volta pro status normal (online/offline
+    // ou nº de membros do grupo).
+    if (statusEl.dataset.typing === '1'){
+      delete statusEl.dataset.typing;
+      statusEl.textContent = lastChatHeaderStatus.text;
+    }
+  }
+
+  // ============================================================
+  // CHAMADA DE VOZ (CALL)
+  //   -> Quem clica no botão 📞 manda um CONVITE. O outro lado ouve
+  //      a música de notificação repetindo a cada 2 segundos até
+  //      atender, recusar, ou a chamada expirar. Assim que atende,
+  //      as duas pontas pegam o microfone de verdade (getUserMedia)
+  //      e conectam via WebRTC (peer-to-peer, sem passar o áudio
+  //      pelo servidor — o servidor só entrega o "convite" e os
+  //      sinais offer/answer/ICE, igual ao compartilhamento de tela).
+  //   -> Dentro da chamada dá pra: mutar/desmutar o microfone, e
+  //      compartilhar a tela (também real, via getDisplayMedia) —
+  //      quando alguém compartilha a tela, ela aparece no lugar das
+  //      2 fotinhos, pro outro lado.
+  //   -> Funciona em PC e celular (o navegador que decide se tem
+  //      suporte a compartilhar tela; ligação/microfone funcionam
+  //      em qualquer navegador moderno, PC ou celular).
+  // ============================================================
+
+  // Dá uma "dica" pro navegador de que existe uma sessão de mídia real
+  // rolando (igual apps de música) — isso ajuda o navegador a não
+  // suspender a aba tão rápido quando o celular vai pra segundo plano
+  // ou a tela bloqueia, o que ajuda a chamada e o compartilhamento de
+  // tela a sobreviverem por mais tempo em segundo plano.
+  function updateMediaSessionForCall(title){
+    if (!('mediaSession' in navigator)) return;
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: title || 'Chamada de voz',
+        artist: 'Chamada em andamento'
+      });
+      navigator.mediaSession.playbackState = 'playing';
+    } catch (_) {}
+  }
+
+  function clearMediaSessionForCall(){
+    if (!('mediaSession' in navigator)) return;
+    try {
+      navigator.mediaSession.playbackState = 'none';
+      navigator.mediaSession.metadata = null;
+    } catch (_) {}
+  }
+
+  // ---- Captura de tela COM áudio do PC/telefone ----
+  // Pede o áudio do sistema/aba junto com o vídeo. Se o navegador não
+  // aceitar as opções de áudio, tenta de novo só com audio:true, e por
+  // último só com vídeo (compartilha sem áudio, avisando o usuário).
+  async function captureDisplayWithAudio(){
+    // IMPORTANTE (evita o "barulho alto"/retorno): o áudio do PC inclui a
+    // voz da outra pessoa saindo nas suas caixas. Por isso:
+    //  - echoCancellation fica LIGADO (o navegador tira do áudio capturado
+    //    o que o próprio app está tocando);
+    //  - restrictOwnAudio tira da captura o som da própria aba do Papo
+    //    (a voz da chamada), mantendo o resto do áudio do computador;
+    //  - sem processamento de ruído/ganho, pra música/vídeo não ficarem
+    //    abafados ou com volume pulando.
+    const attempts = [
+      { video: true, audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false, restrictOwnAudio: true }, systemAudio: 'include' },
+      { video: true, audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false }, systemAudio: 'include' },
+      { video: true, audio: true },
+      { video: true, audio: false }
+    ];
+    let lastErr = null;
+    for (const constraints of attempts){
+      try {
+        return await navigator.mediaDevices.getDisplayMedia(constraints);
+      } catch (err){
+        lastErr = err;
+        // Usuário cancelou/negou: não adianta tentar de novo.
+        if (err && (err.name === 'NotAllowedError' || err.name === 'AbortError')) throw err;
+      }
+    }
+    throw lastErr;
+  }
+
+  // Diz ao navegador que esse áudio é "conteúdo" (música/vídeo) e libera
+  // uma taxa maior, pra não ficar chiado/estourado como voz comprimida.
+  function tuneScreenAudioSender(audioTrack, sender){
+    try { audioTrack.contentHint = 'music'; } catch(_){}
+    try {
+      if (sender && sender.getParameters){
+        const params = sender.getParameters();
+        if (!params.encodings || !params.encodings.length) params.encodings = [{}];
+        params.encodings[0].maxBitrate = 128000;
+        sender.setParameters(params).catch(() => {});
+      }
+    } catch(_){}
+  }
+
+  // Toca o áudio da tela compartilhada de OUTRA pessoa num <audio>
+  // próprio (separado do áudio do microfone dela).
+  function playRemoteScreenAudio(elId, stream){
+    let el = document.getElementById(elId);
+    if (!el){
+      el = document.createElement('audio');
+      el.id = elId;
+      el.autoplay = true;
+      el.style.display = 'none';
+      document.body.appendChild(el);
+    }
+    el.srcObject = stream;
+    const pl = el.play();
+    if (pl && pl.catch) pl.catch(() => {});
+    return el;
+  }
+  function removeRemoteScreenAudio(elId){
+    const el = document.getElementById(elId);
+    if (el){ try { el.srcObject = null; el.remove(); } catch(_){} }
+  }
+
+  function resetCallState(){
+    stopCallRingLoop();
+    clearMediaSessionForCall();
+    if (call.timeoutTimer) clearTimeout(call.timeoutTimer);
+    if (call.durationTimer) clearInterval(call.durationTimer);
+    const video = document.getElementById('call-screen-video');
+    if (video && document.pictureInPictureElement === video){
+      document.exitPictureInPicture().catch(() => {});
+    }
+    if (call.peer){
+      try { call.peer.close(); } catch(_){}
+    }
+    if (call.localStream){
+      call.localStream.getTracks().forEach(t => { try { t.stop(); } catch(_){} });
+    }
+    if (call.screenStream){
+      call.screenStream.getTracks().forEach(t => { try { t.stop(); } catch(_){} });
+    }
+    const remoteAudio = document.getElementById('call-remote-audio');
+    if (remoteAudio){
+      try { remoteAudio.srcObject = null; remoteAudio.remove(); } catch(_){}
+    }
+    removeRemoteScreenAudio('call-remote-screen-audio');
+    call = freshCallState();
+    hideCallOverlay();
+  }
+
+  function showCallOverlay(){
+    const overlay = document.getElementById('call-overlay');
+    if (overlay) overlay.classList.add('show');
+    hideFloatingCallChip();
+  }
+
+  function hideCallOverlay(){
+    const overlay = document.getElementById('call-overlay');
+    const box = document.getElementById('call-content');
+    if (box) box.innerHTML = '';
+    if (overlay) overlay.classList.remove('show');
+    hideFloatingCallChip();
+  }
+
+  // Só esconde visualmente (sem apagar o conteúdo) — usado ao entrar em
+  // Picture-in-Picture, pra não remover o <video> da tela enquanto ele
+  // ainda está tocando "flutuando" por cima dos outros apps/janelas.
+  function minimizeCallOverlayVisually(){
+    const overlay = document.getElementById('call-overlay');
+    if (overlay) overlay.classList.remove('show');
+  }
+
+  // Volta pra tela de conversas (lista de conversas) — usado depois de
+  // entrar em Picture-in-Picture, tanto no PC quanto no celular.
+  function goToConversationsHome(){
+    const chatArea = document.getElementById('chat-area');
+    const sidebar = document.getElementById('sidebar');
+    if (chatArea) chatArea.classList.remove('mobile-open');
+    if (sidebar) sidebar.classList.remove('mobile-hidden');
+  }
+
+  // Botão de "voltar": minimiza a chamada (sem encerrar nada — a
+  // ligação, o microfone e o compartilhamento de tela continuam
+  // rolando normalmente) e volta pra lista de conversas, tanto no PC
+  // quanto no celular. Fica uma "pilulazinha" fixa na tela pra voltar
+  // pra chamada quando quiser.
+  function minimizeCallToHome(){
+    minimizeCallOverlayVisually();
+    goToConversationsHome();
+    showFloatingCallChip('📞 Em chamada — toque para voltar');
+  }
+
+  function showFloatingCallChip(text){
+    const chip = document.getElementById('call-floating-chip');
+    const label = document.getElementById('call-floating-chip-text');
+    if (label) label.textContent = text;
+    if (chip) chip.classList.add('show');
+  }
+
+  function hideFloatingCallChip(){
+    const chip = document.getElementById('call-floating-chip');
+    if (chip) chip.classList.remove('show');
+  }
+
+  const callFloatingChipBtn = document.getElementById('call-floating-chip');
+  if (callFloatingChipBtn){
+    callFloatingChipBtn.addEventListener('click', () => {
+      if (call.state){ showCallOverlay(); renderCallUI(); }
+      else if (groupCall.state){ showCallOverlay(); renderGroupCallUI(); }
+    });
+  }
+
+  // Abre a tela (ou o áudio) da chamada em modo Picture-in-Picture:
+  // a ligação e o compartilhamento de tela CONTINUAM rolando
+  // normalmente, só a janela flutua por cima de tudo (funciona em PC
+  // e no navegador do celular, quando o navegador suporta a API).
+  async function enterCallPictureInPicture(){
+    const video = document.getElementById('call-screen-video');
+    if (!video || !video.srcObject){
+      showToast('Não há nenhuma tela sendo compartilhada pra minimizar agora.');
+      return;
+    }
+    try {
+      if (document.pictureInPictureEnabled && video.requestPictureInPicture){
+        await video.requestPictureInPicture();
+      } else if (video.webkitSupportsPresentationMode && typeof video.webkitSetPresentationMode === 'function'){
+        video.webkitSetPresentationMode('picture-in-picture');
+      } else {
+        showToast('Picture-in-Picture não é suportado neste navegador — a chamada e o compartilhamento continuam ativos em segundo plano.');
+      }
+    } catch (err){
+      showToast('Não foi possível abrir o modo Picture-in-Picture.');
+    }
+    minimizeCallOverlayVisually();
+    goToConversationsHome();
+    video.addEventListener('leavepictureinpicture', () => {
+      if (call.state === 'active'){ showCallOverlay(); renderCallUI(); }
+    }, { once: true });
+  }
+
+  function startDurationTimerIfNeeded(){
+    updateMediaSessionForCall(`Chamada com ${call.remoteName || call.remoteNumber}`);
+    if (call.durationTimer) return;
+    call.durationTimer = setInterval(() => {
+      const el = document.getElementById('call-duration');
+      if (!el || !call.startTime) return;
+      const secs = Math.floor((Date.now() - call.startTime) / 1000);
+      const m = String(Math.floor(secs / 60)).padStart(2, '0');
+      const s = String(secs % 60).padStart(2, '0');
+      el.textContent = `${m}:${s}`;
+    }, 1000);
+  }
+
+  // Decide qual tela mostrar quando alguém está compartilhando (a minha,
+  // a do outro lado, ou as duas ao mesmo tempo — nesse caso o clique na
+  // tela troca qual das duas aparece em destaque).
+  function pickDisplayedScreenSource(){
+    const bothSharing = call.sharingScreen && call.remoteSharingScreen;
+    if (!bothSharing){
+      return call.remoteSharingScreen ? 'remote' : (call.sharingScreen ? 'local' : null);
+    }
+    if (call.selectedScreen !== 'local' && call.selectedScreen !== 'remote'){
+      call.selectedScreen = 'remote';
+    }
+    return call.selectedScreen;
+  }
+
+  // Desenha a tela da chamada de acordo com o estado atual
+  // ('ringing-out' | 'ringing-in' | 'active').
+  function renderCallUI(){
+    const box = document.getElementById('call-content');
+    if (!box) return;
+    if (!call.state){ hideCallOverlay(); return; }
+    showCallOverlay();
+
+    const remoteAvatar = call.remotePhoto
+      ? `<img src="${call.remotePhoto}" alt="">`
+      : `<div class="call-avatar-fallback">${initialsFor(call.remoteName || call.remoteNumber)}</div>`;
+    const myAvatar = myProfile.photo
+      ? `<img src="${myProfile.photo}" alt="">`
+      : `<div class="call-avatar-fallback">${initialsFor(myProfile.name || myNumber)}</div>`;
+
+    if (call.state === 'ringing-out'){
+      box.innerHTML = `
+        <div class="call-single">
+          <div class="call-avatar-big">${remoteAvatar}</div>
+          <div class="call-name">${escapeHtml(call.remoteName || call.remoteNumber)}</div>
+          <div class="call-status">Chamando...</div>
+        </div>
+        <div class="call-controls">
+          <button class="call-btn call-btn-hangup" id="call-cancel-btn" title="Cancelar">📵</button>
+        </div>`;
+      const cancelBtn = document.getElementById('call-cancel-btn');
+      if (cancelBtn) cancelBtn.addEventListener('click', cancelOutgoingCall);
+      return;
+    }
+
+    if (call.state === 'ringing-in'){
+      box.innerHTML = `
+        <div class="call-single">
+          <div class="call-avatar-big pulse">${remoteAvatar}</div>
+          <div class="call-name">${escapeHtml(call.remoteName || call.remoteNumber)}</div>
+          <div class="call-status">Chamada de voz recebida...</div>
+        </div>
+        <div class="call-controls">
+          <button class="call-btn call-btn-hangup" id="call-reject-btn" title="Recusar">📵</button>
+          <button class="call-btn call-btn-accept" id="call-accept-btn" title="Atender">📞</button>
+        </div>`;
+      const rejectBtn = document.getElementById('call-reject-btn');
+      const acceptBtn = document.getElementById('call-accept-btn');
+      if (rejectBtn) rejectBtn.addEventListener('click', () => respondIncomingCall(false));
+      if (acceptBtn) acceptBtn.addEventListener('click', () => respondIncomingCall(true));
+      return;
+    }
+
+    if (call.state === 'active'){
+      const showingScreen = call.sharingScreen || call.remoteSharingScreen;
+      const bothSharing = call.sharingScreen && call.remoteSharingScreen;
+      const gridView = bothSharing && call.screenGridView;
+
+      let screenAreaHtml = '';
+      if (showingScreen){
+        if (gridView){
+          screenAreaHtml = `
+            <div class="call-screens-grid" id="call-screens-grid">
+              <div class="call-screen-tile" data-owner="remote">
+                <video autoplay playsinline muted></video>
+                <div class="call-screen-tile-label">${escapeHtml(call.remoteName || call.remoteNumber)}</div>
+              </div>
+              <div class="call-screen-tile" data-owner="local">
+                <video autoplay playsinline muted></video>
+                <div class="call-screen-tile-label">Você</div>
+              </div>
+            </div>`;
+        } else {
+          screenAreaHtml = `
+            <div class="call-screen-wrap${bothSharing ? ' switchable' : ''}" id="call-screen-wrap">
+              <video id="call-screen-video" autoplay playsinline></video>
+              ${bothSharing ? `<div class="call-screen-hint">Toque na tela para ver as duas transmissões</div>` : ''}
+              <button class="call-pip-btn" id="call-pip-btn" title="Minimizar (Picture-in-Picture)">✕</button>
+            </div>`;
+        }
+      } else {
+        screenAreaHtml = `
+          <div class="call-photos">
+            <div class="call-photo-box"><div class="call-avatar-big">${remoteAvatar}</div><span>${escapeHtml(call.remoteName || call.remoteNumber)}</span></div>
+            <div class="call-photo-box"><div class="call-avatar-big">${myAvatar}</div><span>Você</span></div>
+          </div>`;
+      }
+
+      box.innerHTML = `
+        <div class="call-topbar">
+          <button class="call-back-btn" id="call-back-btn" title="Voltar para as conversas">←</button>
+          <span class="call-topbar-title">📞 ${escapeHtml(call.remoteName || call.remoteNumber)}</span>
+          <span id="call-duration">00:00</span>
+        </div>
+        ${screenAreaHtml}
+        <div class="call-controls">
+          <button class="call-btn ${call.sharingScreen ? 'call-btn-active' : ''}" id="call-screen-btn" title="Compartilhar tela">🖥️</button>
+          <button class="call-btn call-btn-hangup" id="call-hangup-btn" title="Encerrar">📵</button>
+          <button class="call-btn ${(!call.localStream || !call.micEnabled) ? 'call-btn-active' : ''}" id="call-mic-btn" title="${!call.localStream ? 'Ativar microfone' : (call.micEnabled ? 'Mutar microfone' : 'Desmutar microfone')}">${!call.localStream ? '🎙️' : (call.micEnabled ? '🎤' : '🔇')}</button>
+        </div>`;
+
+      const backBtn = document.getElementById('call-back-btn');
+      const hangupBtn = document.getElementById('call-hangup-btn');
+      const screenBtn = document.getElementById('call-screen-btn');
+      const micBtn = document.getElementById('call-mic-btn');
+      if (backBtn) backBtn.addEventListener('click', minimizeCallToHome);
+      if (hangupBtn) hangupBtn.addEventListener('click', () => endCall(true));
+      if (screenBtn) screenBtn.addEventListener('click', toggleScreenShareInCall);
+      if (micBtn) micBtn.addEventListener('click', toggleMicInCall);
+
+      if (showingScreen && gridView){
+        const gridEl = document.getElementById('call-screens-grid');
+        if (gridEl){
+          const remoteTile = gridEl.querySelector('.call-screen-tile[data-owner="remote"] video');
+          const localTile = gridEl.querySelector('.call-screen-tile[data-owner="local"] video');
+          if (remoteTile) remoteTile.srcObject = call.remoteScreenStream;
+          if (localTile) localTile.srcObject = call.screenStream;
+          gridEl.querySelectorAll('.call-screen-tile').forEach(tile => {
+            tile.addEventListener('click', () => {
+              call.selectedScreen = tile.dataset.owner;
+              call.screenGridView = false;
+              renderCallUI();
+            });
+          });
+        }
+      } else if (showingScreen){
+        const source = pickDisplayedScreenSource();
+        const video = document.getElementById('call-screen-video');
+        if (video){
+          video.muted = true; // áudio da tela toca num <audio> separado
+          video.srcObject = source === 'remote' ? call.remoteScreenStream : call.screenStream;
+        }
+        const wrap = document.getElementById('call-screen-wrap');
+        if (wrap && bothSharing){
+          wrap.addEventListener('click', (e) => {
+            if (e.target.closest('.call-pip-btn')) return;
+            call.screenGridView = true;
+            renderCallUI();
+          });
+        }
+        const pipBtn = document.getElementById('call-pip-btn');
+        if (pipBtn) pipBtn.addEventListener('click', (e) => { e.stopPropagation(); enterCallPictureInPicture(); });
+      }
+      startDurationTimerIfNeeded();
+    }
+  }
+
+  // Cria a RTCPeerConnection usada durante a chamada (áudio do
+  // microfone +, opcionalmente, vídeo da tela compartilhada).
+  // Usa o padrão "perfect negotiation" pra suportar renegociação
+  // (quando alguém liga/desliga o compartilhamento de tela no meio
+  // da chamada) sem dar conflito entre os dois lados.
+  function createCallPeer(){
+    const pc = new RTCPeerConnection(CALL_RTC_CONFIG);
+    let makingOffer = false;
+    let ignoreOffer = false;
+
+    pc.onicecandidate = (e) => {
+      if (e.candidate && call.remoteNumber && call.id){
+        socket.emit('call:signal', { to: call.remoteNumber, callId: call.id, data: { kind: 'ice', candidate: e.candidate } });
+      }
+    };
+
+    pc.onnegotiationneeded = async () => {
+      try {
+        if (!call.remoteNumber || !call.id) return;
+        makingOffer = true;
+        const offer = await pc.createOffer();
+        if (pc.signalingState !== 'stable') return;
+        await pc.setLocalDescription(offer);
+        socket.emit('call:signal', { to: call.remoteNumber, callId: call.id, data: { kind: 'offer', sdp: pc.localDescription } });
+      } catch (err){
+        console.error('Erro ao negociar chamada:', err);
+      } finally {
+        makingOffer = false;
+      }
+    };
+
+    pc.ontrack = (e) => {
+      const streamId = e.streams[0] && e.streams[0].id;
+      if (e.track.kind === 'audio' && streamId && call.remoteScreenStreamId && streamId === call.remoteScreenStreamId){
+        // Áudio do PC/telefone de quem está compartilhando a tela
+        playRemoteScreenAudio('call-remote-screen-audio', e.streams[0]);
+        e.track.addEventListener('ended', () => removeRemoteScreenAudio('call-remote-screen-audio'));
+      } else if (e.track.kind === 'audio'){
+        let remoteAudio = document.getElementById('call-remote-audio');
+        if (!remoteAudio){
+          remoteAudio = document.createElement('audio');
+          remoteAudio.id = 'call-remote-audio';
+          remoteAudio.autoplay = true;
+          remoteAudio.style.display = 'none';
+          document.body.appendChild(remoteAudio);
+        }
+        remoteAudio.srcObject = e.streams[0];
+        const p = remoteAudio.play();
+        if (p && p.catch) p.catch(() => {});
+      } else if (e.track.kind === 'video'){
+        call.remoteScreenStream = e.streams[0];
+        call.remoteSharingScreen = true;
+        if (call.selectedScreen !== 'local') call.selectedScreen = 'remote';
+        e.track.addEventListener('ended', () => {
+          call.remoteSharingScreen = false;
+          call.remoteScreenStream = null;
+          if (call.selectedScreen === 'remote') call.selectedScreen = call.sharingScreen ? 'local' : null;
+          if (call.state === 'active') renderCallUI();
+        });
+        if (call.state === 'active') renderCallUI();
+      }
+    };
+
+    pc.onconnectionstatechange = () => {
+      if (call.peer === pc && ['disconnected', 'failed', 'closed'].includes(pc.connectionState)){
+        if (call.state === 'active' || call.state === 'ringing-out' || call.state === 'ringing-in'){
+          showToast('Chamada encerrada.');
+          resetCallState();
+        }
+      }
+    };
+
+    pc._isMakingOffer = () => makingOffer;
+    pc._setIgnoreOffer = (v) => { ignoreOffer = v; };
+    pc._isIgnoringOffer = () => ignoreOffer;
+
+    return pc;
+  }
+
+  // Tenta pegar o microfone, mas NUNCA impede a chamada de continuar
+  // se não conseguir (sem microfone no aparelho, permissão negada,
+  // navegador sem suporte, etc). Nesses casos a chamada segue em modo
+  // "somente ouvir" (você escuta a outra pessoa, mas ela não te ouve
+  // até ativar o microfone depois, se quiser).
+  async function tryGetMicStream(){
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return null;
+    try {
+      return await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    } catch (err) {
+      return null;
+    }
+  }
+
+  // Monta a RTCPeerConnection da chamada já com (ou sem) o áudio do
+  // microfone. Mesmo sem microfone, cria um "transceiver" de áudio
+  // em modo somente-recebimento, pra garantir que a negociação
+  // WebRTC aconteça e o áudio da OUTRA pessoa chegue normalmente.
+  function attachCallMedia(stream){
+    call.localStream = stream || null;
+    call.micEnabled = !!stream;
+    call.peer = createCallPeer();
+    if (stream){
+      stream.getTracks().forEach(track => call.peer.addTrack(track, stream));
+    } else {
+      call.peer.addTransceiver('audio', { direction: 'recvonly' });
+    }
+  }
+
+  // ---- Lado de quem LIGA ----
+  function startOutgoingCall(){
+    if (!currentChat || currentChat.type !== 'private') return;
+    if (call.state){
+      showToast('Você já está em uma chamada.');
+      return;
+    }
+    if (groupCall.active || groupCall.state){
+      showToast('Você já está em uma chamada de grupo. Saia dela antes de ligar.');
+      return;
+    }
+    if (typeof RTCPeerConnection === 'undefined'){
+      showToast('Este navegador não suporta chamadas de voz.');
+      return;
+    }
+    const to = currentChat.number;
+    const chatInfo = findPrivateChat(to);
+    if (!chatInfo || !chatInfo.online){
+      showToast('O contato precisa estar online para você ligar.');
+      return;
+    }
+
+    socket.emit('call:invite', { to }, (res) => {
+      if (!res || !res.ok){
+        showToast((res && res.reason) || 'Não foi possível iniciar a chamada.');
+        return;
+      }
+      call.id = res.callId;
+      call.role = 'caller';
+      call.state = 'ringing-out';
+      call.remoteNumber = to;
+      call.remoteName = (chatInfo.profile && chatInfo.profile.name) || to;
+      call.remotePhoto = (chatInfo.profile && chatInfo.profile.photo) || null;
+      call.polite = false;
+      renderCallUI();
+      startCallRingLoop();
+      call.timeoutTimer = setTimeout(() => {
+        if (call.state === 'ringing-out'){
+          showToast('Ninguém atendeu a chamada.');
+          cancelOutgoingCall();
+        }
+      }, 45000);
+    });
+  }
+
+  function cancelOutgoingCall(){
+    if (call.remoteNumber && call.id){
+      socket.emit('call:cancel', { to: call.remoteNumber, callId: call.id });
+    }
+    resetCallState();
+  }
+
+  socket.on('call:cancelled', ({ from, callId }) => {
+    if (call.id !== callId || call.remoteNumber !== from) return;
+    if (call.state === 'ringing-in'){
+      showToast(`${call.remoteName || from} cancelou a chamada.`);
+    }
+    resetCallState();
+  });
+
+  // Convite de chamada chegando
+  socket.on('call:incoming', ({ from, fromName, fromPhoto, callId }) => {
+    if (call.state || groupCall.active || groupCall.state){
+      // já ocupado com outra chamada: recusa automaticamente.
+      socket.emit('call:answer', { to: from, callId, accepted: false });
+      return;
+    }
+    call.id = callId;
+    call.role = 'callee';
+    call.state = 'ringing-in';
+    call.remoteNumber = from;
+    call.remoteName = fromName || from;
+    call.remotePhoto = fromPhoto || null;
+    call.polite = true;
+    renderCallUI();
+    startCallRingLoop();
+    call.timeoutTimer = setTimeout(() => {
+      if (call.state === 'ringing-in'){
+        respondIncomingCall(false);
+      }
+    }, 45000);
+  });
+
+  // ---- Lado de quem RECEBE a chamada ----
+  async function respondIncomingCall(accept){
+    if (call.timeoutTimer) clearTimeout(call.timeoutTimer);
+    stopCallRingLoop();
+    const from = call.remoteNumber;
+    const callId = call.id;
+
+    if (!accept){
+      if (from && callId) socket.emit('call:answer', { to: from, callId, accepted: false });
+      resetCallState();
+      return;
+    }
+
+    // Atende a chamada mesmo sem microfone (sem aparelho, permissão
+    // negada, etc). Só entra em modo "somente ouvir" nesse caso.
+    const stream = await tryGetMicStream();
+    attachCallMedia(stream);
+    call.state = 'active';
+    call.startTime = Date.now();
+    renderCallUI();
+    socket.emit('call:answer', { to: from, callId, accepted: true });
+    if (!stream){
+      showToast('Chamada atendida sem microfone (modo somente ouvir). Toque no 🎙️ pra ativar depois.');
+    }
+  }
+
+  // O outro lado atendeu (ou recusou) minha chamada
+  socket.on('call:answered', async ({ from, fromName, callId, accepted }) => {
+    if (call.id !== callId || call.remoteNumber !== from) return;
+    if (call.timeoutTimer) clearTimeout(call.timeoutTimer);
+    stopCallRingLoop();
+
+    if (!accepted){
+      showToast(`${fromName || from} não atendeu a chamada.`);
+      resetCallState();
+      return;
+    }
+
+    // A ligação começa mesmo sem microfone (modo "somente ouvir");
+    // isso nunca derruba a chamada.
+    const stream = await tryGetMicStream();
+    attachCallMedia(stream);
+    call.state = 'active';
+    call.startTime = Date.now();
+    renderCallUI();
+    // onnegotiationneeded (disparado pelo addTrack/addTransceiver
+    // dentro de attachCallMedia) cuida de criar e enviar a primeira
+    // offer automaticamente.
+    if (!stream){
+      showToast('Chamada em modo somente ouvir (sem microfone). Toque no 🎙️ pra ativar depois.');
+    }
+  });
+
+  // Sinalização WebRTC (offer/answer/ICE), repassada "cega" pelo servidor.
+  socket.on('call:signal', async ({ from, callId, data }) => {
+    if (!call.peer || call.id !== callId || call.remoteNumber !== from || !data) return;
+    const pc = call.peer;
+    try {
+      if (data.kind === 'offer'){
+        const offerCollision = pc._isMakingOffer() || pc.signalingState !== 'stable';
+        const shouldIgnore = !call.polite && offerCollision;
+        pc._setIgnoreOffer(shouldIgnore);
+        if (shouldIgnore) return;
+
+        if (offerCollision){
+          await Promise.all([
+            pc.setLocalDescription({ type: 'rollback' }),
+            pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
+          ]);
+        } else {
+          await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        }
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        socket.emit('call:signal', { to: from, callId, data: { kind: 'answer', sdp: pc.localDescription } });
+      } else if (data.kind === 'screen-stream'){
+        // Quem compartilha avisa qual é o stream da tela (vídeo + áudio),
+        // pra não confundir com o áudio do microfone.
+        call.remoteScreenStreamId = data.streamId || null;
+      } else if (data.kind === 'answer'){
+        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+      } else if (data.kind === 'ice' && data.candidate){
+        try { await pc.addIceCandidate(new RTCIceCandidate(data.candidate)); }
+        catch (err){ if (!pc._isIgnoringOffer()) console.error('Erro ao adicionar ICE candidate:', err); }
+      }
+    } catch (err){
+      console.error('Erro na sinalização da chamada:', err);
+    }
+  });
+
+  // ---- Compartilhar tela DENTRO da chamada ----
+  // Os DOIS lados podem compartilhar a tela ao mesmo tempo: cada um
+  // manda seu próprio vídeo pela mesma ligação. Quando isso acontece,
+  // um toque na tela alterna qual das duas fica em destaque.
+  async function toggleScreenShareInCall(){
+    if (!call.peer || call.state !== 'active') return;
+    if (call.sharingScreen){
+      stopScreenShareInCall();
+      return;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia){
+      showToast('Este navegador/dispositivo não permite compartilhar a tela (ex.: Safari no iPhone não suporta captura de tela).');
+      return;
+    }
+    try {
+      const stream = await captureDisplayWithAudio();
+      const track = stream.getVideoTracks()[0];
+      const audioTrack = stream.getAudioTracks()[0] || null;
+      call.screenStream = stream;
+      call.sharingScreen = true;
+      call.selectedScreen = 'local';
+      // Avisa o outro lado qual stream é a tela ANTES de mandar as faixas.
+      socket.emit('call:signal', { to: call.remoteNumber, callId: call.id, data: { kind: 'screen-stream', streamId: stream.id } });
+      call.screenSender = call.peer.addTrack(track, stream);
+      if (audioTrack){
+        call.screenAudioSender = call.peer.addTrack(audioTrack, stream);
+        tuneScreenAudioSender(audioTrack, call.screenAudioSender);
+      } else {
+        showToast('Tela compartilhada SEM áudio. Marque "Compartilhar áudio" na janela de seleção (no celular, o navegador pode não permitir).');
+      }
+      track.addEventListener('ended', () => {
+        if (call.sharingScreen) stopScreenShareInCall();
+      });
+      renderCallUI();
+    } catch (err){
+      showToast('Não foi possível capturar a tela.');
+    }
+  }
+
+  function stopScreenShareInCall(){
+    if (call.screenSender && call.peer){
+      try { call.peer.removeTrack(call.screenSender); } catch(_){}
+    }
+    if (call.screenAudioSender && call.peer){
+      try { call.peer.removeTrack(call.screenAudioSender); } catch(_){}
+    }
+    call.screenAudioSender = null;
+    if (call.screenStream){
+      call.screenStream.getTracks().forEach(t => { try { t.stop(); } catch(_){} });
+    }
+    call.screenStream = null;
+    call.screenSender = null;
+    call.sharingScreen = false;
+    if (call.selectedScreen === 'local') call.selectedScreen = call.remoteSharingScreen ? 'remote' : null;
+    if (call.state === 'active') renderCallUI();
+  }
+
+  // ---- Ativar/mutar/desmutar o microfone DENTRO da chamada ----
+  // Se a chamada começou sem microfone (modo somente ouvir), o
+  // primeiro toque aqui tenta pegar o microfone agora e adiciona o
+  // áudio na ligação já em andamento (sem precisar desligar e ligar
+  // de novo).
+  async function toggleMicInCall(){
+    if (!call.peer || call.state !== 'active') return;
+
+    if (!call.localStream){
+      const stream = await tryGetMicStream();
+      if (!stream){
+        showToast('Não foi possível acessar o microfone. Verifique as permissões do navegador/app.');
+        return;
+      }
+      call.localStream = stream;
+      call.micEnabled = true;
+      stream.getTracks().forEach(track => call.peer.addTrack(track, stream));
+      renderCallUI();
+      return;
+    }
+
+    call.micEnabled = !call.micEnabled;
+    call.localStream.getAudioTracks().forEach(t => { t.enabled = call.micEnabled; });
+    renderCallUI();
+  }
+
+  // ---- Encerrar a chamada ----
+  function endCall(notify){
+    if (notify && call.remoteNumber && call.id){
+      socket.emit('call:hangup', { to: call.remoteNumber, callId: call.id });
+    }
+    resetCallState();
+  }
+
+  socket.on('call:ended', ({ from, callId }) => {
+    if (call.id !== callId || call.remoteNumber !== from) return;
+    showToast('A chamada foi encerrada.');
+    resetCallState();
+  });
+
+  // Se o contato com quem estou em chamada ficar offline, encerra a
+  // chamada automaticamente (evita ficar "pendurado").
+  function maybeEndCallForOfflineNumber(number){
+    if (call.remoteNumber === number && call.state){
+      showToast(`${number} ficou offline. Chamada encerrada.`);
+      resetCallState();
+    }
+  }
+
+  // ============================================================
+  // CHAMADA DE VOZ EM GRUPO (mesh)
+  //   -> Igual a chamada 1:1 (mesmo microfone real, mesmo
+  //      compartilhamento de tela real, mesmo servidor só repassando
+  //      sinalização), só que agora com VÁRIAS pessoas: cada
+  //      participante mantém uma ligação direta (peer-to-peer) com
+  //      TODO MUNDO que já está na chamada — não existe um servidor
+  //      central de áudio/vídeo.
+  //   -> Se ninguém do grupo estiver em chamada, tocar 📞 CHAMA todo
+  //      mundo (toca a cada 2s até atender/recusar/expirar). Se já tem
+  //      uma chamada rolando, tocar 📞 ENTRA direto nela.
+  //   -> Cada um pode compartilhar a tela — inclusive vários ao mesmo
+  //      tempo. Um toque na tela alterna qual transmissão aparece em
+  //      destaque. O botão ✕ manda pra Picture-in-Picture sem sair da
+  //      chamada nem parar de compartilhar/assistir. A seta (⤡/⤢)
+  //      alterna entre ver todo mundo ou só quem ligou + você.
+  // ============================================================
+  function cssSafeId(number){
+    return String(number).replace(/[^a-zA-Z0-9_-]/g, '_');
+  }
+
+  function isPoliteWith(remoteNumber){
+    // Regra combinada e determinística: quem tem o número "maior"
+    // (lexicograficamente) cede em caso de colisão de renegociação.
+    // Os dois lados chegam na mesma conclusão sem precisar perguntar
+    // um pro outro.
+    return myNumber > remoteNumber;
+  }
+
+  function startGroupCallRingLoop(){
+    stopGroupCallRingLoop();
+    const play = () => {
+      if (!callRingAudio) return;
+      try {
+        callRingAudio.currentTime = 0;
+        const p = callRingAudio.play();
+        if (p && p.catch) p.catch(() => {});
+      } catch (_) {}
+    };
+    play();
+    groupCall.ringTimer = setInterval(play, 2000);
+  }
+
+  function stopGroupCallRingLoop(){
+    if (groupCall.ringTimer){ clearInterval(groupCall.ringTimer); groupCall.ringTimer = null; }
+    if (callRingAudio){
+      try { callRingAudio.pause(); callRingAudio.currentTime = 0; } catch (_) {}
+    }
+  }
+
+  function createGroupCallPeer(remoteNumber){
+    const pc = new RTCPeerConnection(CALL_RTC_CONFIG);
+    let makingOffer = false;
+    let ignoreOffer = false;
+    const polite = isPoliteWith(remoteNumber);
+
+    pc.onicecandidate = (e) => {
+      if (e.candidate && groupCall.callId){
+        socket.emit('groupcall:signal', { to: remoteNumber, groupId: groupCall.groupId, callId: groupCall.callId, data: { kind: 'ice', candidate: e.candidate } });
+      }
+    };
+
+    pc.onnegotiationneeded = async () => {
+      try {
+        if (!groupCall.callId) return;
+        makingOffer = true;
+        const offer = await pc.createOffer();
+        if (pc.signalingState !== 'stable') return;
+        await pc.setLocalDescription(offer);
+        socket.emit('groupcall:signal', { to: remoteNumber, groupId: groupCall.groupId, callId: groupCall.callId, data: { kind: 'offer', sdp: pc.localDescription } });
+      } catch (err){
+        console.error('Erro ao negociar chamada de grupo:', err);
+      } finally {
+        makingOffer = false;
+      }
+    };
+
+    pc.ontrack = (e) => {
+      const p = groupCall.participants.get(remoteNumber);
+      if (!p) return;
+      const streamId = e.streams[0] && e.streams[0].id;
+      if (e.track.kind === 'audio' && streamId && p.remoteScreenStreamId && streamId === p.remoteScreenStreamId){
+        // Áudio do PC/telefone de quem está compartilhando a tela
+        const elId = `groupcall-screenaudio-${cssSafeId(remoteNumber)}`;
+        playRemoteScreenAudio(elId, e.streams[0]);
+        e.track.addEventListener('ended', () => removeRemoteScreenAudio(elId));
+      } else if (e.track.kind === 'audio'){
+        const audioId = `groupcall-audio-${cssSafeId(remoteNumber)}`;
+        let audioEl = document.getElementById(audioId);
+        if (!audioEl){
+          audioEl = document.createElement('audio');
+          audioEl.id = audioId;
+          audioEl.autoplay = true;
+          audioEl.style.display = 'none';
+          document.body.appendChild(audioEl);
+        }
+        audioEl.srcObject = e.streams[0];
+        const pl = audioEl.play();
+        if (pl && pl.catch) pl.catch(() => {});
+      } else if (e.track.kind === 'video'){
+        p.sharingScreen = true;
+        p.screenStream = e.streams[0];
+        if (!groupCall.selectedScreenOwner) groupCall.selectedScreenOwner = remoteNumber;
+        e.track.addEventListener('ended', () => {
+          p.sharingScreen = false;
+          p.screenStream = null;
+          if (groupCall.selectedScreenOwner === remoteNumber) groupCall.selectedScreenOwner = null;
+          if (groupCall.state === 'active') renderGroupCallUI();
+        });
+        if (groupCall.state === 'active') renderGroupCallUI();
+      }
+    };
+
+    pc.onconnectionstatechange = () => {
+      if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)){
+        // Não derruba a chamada toda: só esse participante caiu.
+        removeGroupCallParticipant(remoteNumber, true);
+      }
+    };
+
+    pc._isMakingOffer = () => makingOffer;
+    pc._setIgnoreOffer = (v) => { ignoreOffer = v; };
+    pc._isIgnoringOffer = () => ignoreOffer;
+    pc._polite = polite;
+
+    return pc;
+  }
+
+  // Cria (se ainda não existir) a conexão com um participante e já
+  // manda meu áudio (e minha tela, se eu estiver compartilhando).
+  function connectToGroupCallParticipant(remoteNumber, name, photo){
+    if (remoteNumber === myNumber) return null;
+    let entry = groupCall.participants.get(remoteNumber);
+    if (entry){
+      if (name) entry.name = name;
+      if (photo !== undefined) entry.photo = photo;
+      return entry;
+    }
+    entry = { name: name || remoteNumber, photo: photo || null, peer: null, sharingScreen: false, screenStream: null, screenSender: null };
+    entry.peer = createGroupCallPeer(remoteNumber);
+    if (groupCall.localStream){
+      groupCall.localStream.getTracks().forEach(track => entry.peer.addTrack(track, groupCall.localStream));
+    } else {
+      entry.peer.addTransceiver('audio', { direction: 'recvonly' });
+    }
+    if (groupCall.sharingScreen && groupCall.screenStream){
+      const track = groupCall.screenStream.getVideoTracks()[0];
+      const aTrack = groupCall.screenStream.getAudioTracks()[0];
+      socket.emit('groupcall:signal', { to: remoteNumber, groupId: groupCall.groupId, callId: groupCall.callId, data: { kind: 'screen-stream', streamId: groupCall.screenStream.id } });
+      if (track) entry.screenSender = entry.peer.addTrack(track, groupCall.screenStream);
+      if (aTrack){
+        entry.screenAudioSender = entry.peer.addTrack(aTrack, groupCall.screenStream);
+        tuneScreenAudioSender(aTrack, entry.screenAudioSender);
+      }
+    }
+    groupCall.participants.set(remoteNumber, entry);
+    return entry;
+  }
+
+  function removeGroupCallParticipant(number, showMsg){
+    const p = groupCall.participants.get(number);
+    if (!p) return;
+    if (p.peer){ try { p.peer.close(); } catch(_){} }
+    const audioEl = document.getElementById(`groupcall-audio-${cssSafeId(number)}`);
+    if (audioEl){ try { audioEl.srcObject = null; audioEl.remove(); } catch(_){} }
+    groupCall.participants.delete(number);
+    if (groupCall.selectedScreenOwner === number) groupCall.selectedScreenOwner = null;
+    if (showMsg) showToast(`${p.name || number} saiu da chamada.`);
+    if (groupCall.state === 'active') renderGroupCallUI();
+  }
+
+  // ---- Iniciar (ou entrar em) uma chamada de grupo ----
+  function startGroupCall(){
+    if (!currentChat || currentChat.type !== 'group') return;
+    if (groupCall.active || groupCall.state){
+      showToast('Você já está em uma chamada de grupo.');
+      return;
+    }
+    if (call.state){
+      showToast('Termine sua chamada atual antes de iniciar uma chamada de grupo.');
+      return;
+    }
+    if (typeof RTCPeerConnection === 'undefined'){
+      showToast('Este navegador não suporta chamadas de voz.');
+      return;
+    }
+    joinGroupCall(currentChat.id, currentChat.name);
+  }
+
+  function joinGroupCall(groupId, fallbackGroupName){
+    socket.emit('groupcall:invite', { groupId }, async (res) => {
+      if (!res || !res.ok){
+        showToast((res && res.reason) || 'Não foi possível entrar na chamada de grupo.');
+        if (groupCall.state === 'ringing-in') resetGroupCallState();
+        return;
+      }
+      if (groupCall.timeoutTimer){ clearTimeout(groupCall.timeoutTimer); groupCall.timeoutTimer = null; }
+      stopGroupCallRingLoop();
+
+      groupCall.active = true;
+      groupCall.callId = res.callId;
+      groupCall.groupId = groupId;
+      groupCall.groupName = res.groupName || fallbackGroupName || 'Grupo';
+      groupCall.initiatorNumber = res.initiator || groupCall.initiatorNumber;
+      groupCall.initiatorName = res.initiatorName || groupCall.initiatorName;
+      groupCall.initiatorPhoto = res.initiatorPhoto || groupCall.initiatorPhoto;
+      groupCall.state = 'active';
+      groupCall.startTime = Date.now();
+
+      const stream = await tryGetMicStream();
+      groupCall.localStream = stream;
+      groupCall.micEnabled = !!stream;
+
+      (res.participants || []).forEach(p => connectToGroupCallParticipant(p.number, p.name, p.photo));
+
+      renderGroupCallUI();
+      if (!stream) showToast('Chamada em modo somente ouvir (sem microfone). Toque no 🎙️ pra ativar depois.');
+    });
+  }
+
+  socket.on('groupcall:incoming', ({ groupId, groupName, callId, from, fromName, fromPhoto }) => {
+    if (call.state || groupCall.active || groupCall.state){
+      socket.emit('groupcall:decline', { groupId, callId });
+      return;
+    }
+    groupCall.groupId = groupId;
+    groupCall.groupName = groupName;
+    groupCall.callId = callId;
+    groupCall.initiatorNumber = from;
+    groupCall.initiatorName = fromName || from;
+    groupCall.initiatorPhoto = fromPhoto || null;
+    groupCall.state = 'ringing-in';
+    renderGroupCallUI();
+    startGroupCallRingLoop();
+    groupCall.timeoutTimer = setTimeout(() => {
+      if (groupCall.state === 'ringing-in') respondIncomingGroupCall(false);
+    }, 45000);
+  });
+
+  function respondIncomingGroupCall(accept){
+    if (groupCall.timeoutTimer){ clearTimeout(groupCall.timeoutTimer); groupCall.timeoutTimer = null; }
+    stopGroupCallRingLoop();
+    if (!accept){
+      if (groupCall.groupId && groupCall.callId){
+        socket.emit('groupcall:decline', { groupId: groupCall.groupId, callId: groupCall.callId });
+      }
+      groupCall = freshGroupCallState();
+      hideCallOverlay();
+      return;
+    }
+    joinGroupCall(groupCall.groupId, groupCall.groupName);
+  }
+
+  socket.on('groupcall:participant-joined', ({ groupId, callId, number, name, photo }) => {
+    if (!groupCall.active || groupCall.groupId !== groupId || groupCall.callId !== callId) return;
+    if (number === myNumber) return;
+    connectToGroupCallParticipant(number, name, photo);
+    renderGroupCallUI();
+    showToast(`${name || number} entrou na chamada.`);
+  });
+
+  socket.on('groupcall:participant-left', ({ groupId, callId, number }) => {
+    if (!groupCall.active || groupCall.groupId !== groupId || groupCall.callId !== callId) return;
+    removeGroupCallParticipant(number, true);
+  });
+
+  socket.on('groupcall:signal', async ({ from, groupId, callId, data }) => {
+    if (!groupCall.active || groupCall.callId !== callId || groupCall.groupId !== groupId || !data) return;
+    const entry = connectToGroupCallParticipant(from, from, null);
+    if (!entry) return;
+    const pc = entry.peer;
+    try {
+      if (data.kind === 'offer'){
+        const offerCollision = pc._isMakingOffer() || pc.signalingState !== 'stable';
+        const shouldIgnore = !pc._polite && offerCollision;
+        pc._setIgnoreOffer(shouldIgnore);
+        if (shouldIgnore) return;
+
+        if (offerCollision){
+          await Promise.all([
+            pc.setLocalDescription({ type: 'rollback' }),
+            pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
+          ]);
+        } else {
+          await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        }
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        socket.emit('groupcall:signal', { to: from, groupId, callId, data: { kind: 'answer', sdp: pc.localDescription } });
+      } else if (data.kind === 'screen-stream'){
+        entry.remoteScreenStreamId = data.streamId || null;
+      } else if (data.kind === 'answer'){
+        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+      } else if (data.kind === 'ice' && data.candidate){
+        try { await pc.addIceCandidate(new RTCIceCandidate(data.candidate)); }
+        catch (err){ if (!pc._isIgnoringOffer()) console.error('Erro ao adicionar ICE (grupo):', err); }
+      }
+    } catch (err){
+      console.error('Erro na sinalização da chamada de grupo:', err);
+    }
+  });
+
+  // ---- Mic e tela dentro da chamada de grupo ----
+  async function toggleMicInGroupCall(){
+    if (groupCall.state !== 'active') return;
+    if (!groupCall.localStream){
+      const stream = await tryGetMicStream();
+      if (!stream){
+        showToast('Não foi possível acessar o microfone. Verifique as permissões do navegador/app.');
+        return;
+      }
+      groupCall.localStream = stream;
+      groupCall.micEnabled = true;
+      groupCall.participants.forEach(p => {
+        stream.getTracks().forEach(track => p.peer.addTrack(track, stream));
+      });
+      renderGroupCallUI();
+      return;
+    }
+    groupCall.micEnabled = !groupCall.micEnabled;
+    groupCall.localStream.getAudioTracks().forEach(t => { t.enabled = groupCall.micEnabled; });
+    renderGroupCallUI();
+  }
+
+  async function toggleScreenShareInGroupCall(){
+    if (groupCall.state !== 'active') return;
+    if (groupCall.sharingScreen){
+      stopScreenShareInGroupCall();
+      return;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia){
+      showToast('Este navegador/dispositivo não permite compartilhar a tela (ex.: Safari no iPhone não suporta captura de tela).');
+      return;
+    }
+    try {
+      const stream = await captureDisplayWithAudio();
+      const track = stream.getVideoTracks()[0];
+      const audioTrack = stream.getAudioTracks()[0] || null;
+      groupCall.screenStream = stream;
+      groupCall.sharingScreen = true;
+      groupCall.selectedScreenOwner = 'me';
+      groupCall.participants.forEach((p, num) => {
+        socket.emit('groupcall:signal', { to: num, groupId: groupCall.groupId, callId: groupCall.callId, data: { kind: 'screen-stream', streamId: stream.id } });
+        p.screenSender = p.peer.addTrack(track, stream);
+        if (audioTrack){
+          p.screenAudioSender = p.peer.addTrack(audioTrack, stream);
+          tuneScreenAudioSender(audioTrack, p.screenAudioSender);
+        }
+      });
+      if (!audioTrack){
+        showToast('Tela compartilhada SEM áudio. Marque "Compartilhar áudio" na janela de seleção (no celular, o navegador pode não permitir).');
+      }
+      track.addEventListener('ended', () => {
+        if (groupCall.sharingScreen) stopScreenShareInGroupCall();
+      });
+      renderGroupCallUI();
+    } catch (err){
+      showToast('Não foi possível capturar a tela.');
+    }
+  }
+
+  function stopScreenShareInGroupCall(){
+    groupCall.participants.forEach(p => {
+      if (p.screenSender && p.peer){ try { p.peer.removeTrack(p.screenSender); } catch(_){} }
+      if (p.screenAudioSender && p.peer){ try { p.peer.removeTrack(p.screenAudioSender); } catch(_){} }
+      p.screenSender = null;
+      p.screenAudioSender = null;
+    });
+    if (groupCall.screenStream){
+      groupCall.screenStream.getTracks().forEach(t => { try { t.stop(); } catch(_){} });
+    }
+    groupCall.screenStream = null;
+    groupCall.sharingScreen = false;
+    if (groupCall.selectedScreenOwner === 'me') groupCall.selectedScreenOwner = null;
+    if (groupCall.state === 'active') renderGroupCallUI();
+  }
+
+  function leaveGroupCall(notify){
+    if (notify && groupCall.groupId && groupCall.callId){
+      socket.emit('groupcall:leave', { groupId: groupCall.groupId, callId: groupCall.callId });
+    }
+    resetGroupCallState();
+  }
+
+  function resetGroupCallState(){
+    stopGroupCallRingLoop();
+    clearMediaSessionForCall();
+    if (groupCall.timeoutTimer) clearTimeout(groupCall.timeoutTimer);
+    if (groupCall.durationTimer) clearInterval(groupCall.durationTimer);
+    const video = document.getElementById('call-screen-video');
+    if (video && document.pictureInPictureElement === video){
+      document.exitPictureInPicture().catch(() => {});
+    }
+    groupCall.participants.forEach((p, num) => {
+      if (p.peer){ try { p.peer.close(); } catch(_){} }
+      const audioEl = document.getElementById(`groupcall-audio-${cssSafeId(num)}`);
+      if (audioEl){ try { audioEl.srcObject = null; audioEl.remove(); } catch(_){} }
+      removeRemoteScreenAudio(`groupcall-screenaudio-${cssSafeId(num)}`);
+    });
+    if (groupCall.localStream){
+      groupCall.localStream.getTracks().forEach(t => { try { t.stop(); } catch(_){} });
+    }
+    if (groupCall.screenStream){
+      groupCall.screenStream.getTracks().forEach(t => { try { t.stop(); } catch(_){} });
+    }
+    groupCall = freshGroupCallState();
+    hideCallOverlay();
+  }
+
+  function startGroupCallDurationTimerIfNeeded(){
+    updateMediaSessionForCall(`Chamada em grupo · ${groupCall.groupName || 'Grupo'}`);
+    if (groupCall.durationTimer) return;
+    groupCall.durationTimer = setInterval(() => {
+      const el = document.getElementById('call-duration');
+      if (!el || !groupCall.startTime) return;
+      const secs = Math.floor((Date.now() - groupCall.startTime) / 1000);
+      const m = String(Math.floor(secs / 60)).padStart(2, '0');
+      const s = String(secs % 60).padStart(2, '0');
+      el.textContent = `${m}:${s}`;
+    }, 1000);
+  }
+
+  async function enterGroupCallPictureInPicture(){
+    const video = document.getElementById('call-screen-video');
+    if (!video || !video.srcObject){
+      showToast('Não há nenhuma tela sendo compartilhada pra minimizar agora.');
+      return;
+    }
+    try {
+      if (document.pictureInPictureEnabled && video.requestPictureInPicture){
+        await video.requestPictureInPicture();
+      } else if (video.webkitSupportsPresentationMode && typeof video.webkitSetPresentationMode === 'function'){
+        video.webkitSetPresentationMode('picture-in-picture');
+      } else {
+        showToast('Picture-in-Picture não é suportado neste navegador — a chamada continua ativa em segundo plano.');
+      }
+    } catch (err){
+      showToast('Não foi possível abrir o modo Picture-in-Picture.');
+    }
+    minimizeCallOverlayVisually();
+    goToConversationsHome();
+    video.addEventListener('leavepictureinpicture', () => {
+      if (groupCall.state === 'active'){ showCallOverlay(); renderGroupCallUI(); }
+    }, { once: true });
+  }
+
+  // Desenha a tela da chamada de grupo ('ringing-in' | 'active').
+  function renderGroupCallUI(){
+    const box = document.getElementById('call-content');
+    if (!box) return;
+    if (!groupCall.state){ hideCallOverlay(); return; }
+    showCallOverlay();
+
+    if (groupCall.state === 'ringing-in'){
+      const avatar = groupCall.initiatorPhoto
+        ? `<img src="${groupCall.initiatorPhoto}" alt="">`
+        : `<div class="call-avatar-fallback">${initialsFor(groupCall.initiatorName || groupCall.initiatorNumber)}</div>`;
+      box.innerHTML = `
+        <div class="call-single">
+          <div class="call-avatar-big pulse">${avatar}</div>
+          <div class="call-name">${escapeHtml(groupCall.groupName || 'Grupo')}</div>
+          <div class="call-status">Chamada de grupo de ${escapeHtml(groupCall.initiatorName || groupCall.initiatorNumber)}</div>
+        </div>
+        <div class="call-controls">
+          <button class="call-btn call-btn-hangup" id="groupcall-reject-btn" title="Recusar">📵</button>
+          <button class="call-btn call-btn-accept" id="groupcall-accept-btn" title="Atender">📞</button>
+        </div>`;
+      const rejectBtn = document.getElementById('groupcall-reject-btn');
+      const acceptBtn = document.getElementById('groupcall-accept-btn');
+      if (rejectBtn) rejectBtn.addEventListener('click', () => respondIncomingGroupCall(false));
+      if (acceptBtn) acceptBtn.addEventListener('click', () => respondIncomingGroupCall(true));
+      return;
+    }
+
+    if (groupCall.state === 'active'){
+      const sharers = [];
+      if (groupCall.sharingScreen && groupCall.screenStream){
+        sharers.push({ owner: 'me', name: 'Você', stream: groupCall.screenStream, muted: true });
+      }
+      groupCall.participants.forEach((p, num) => {
+        if (p.sharingScreen && p.screenStream) sharers.push({ owner: num, name: p.name || num, stream: p.screenStream, muted: false });
+      });
+      const showingScreen = sharers.length > 0;
+      const gridView = sharers.length > 1 && groupCall.screenGridView;
+
+      let mainHtml;
+      if (showingScreen && gridView){
+        mainHtml = `
+          <div class="call-screens-grid" id="call-screens-grid">
+            ${sharers.map(s => `
+              <div class="call-screen-tile" data-owner="${escapeHtml(s.owner)}">
+                <video autoplay playsinline muted></video>
+                <div class="call-screen-tile-label">${escapeHtml(s.name)}</div>
+              </div>`).join('')}
+          </div>`;
+      } else if (showingScreen){
+        if (!sharers.find(s => s.owner === groupCall.selectedScreenOwner)) groupCall.selectedScreenOwner = sharers[0].owner;
+        mainHtml = `
+          <div class="call-screen-wrap${sharers.length > 1 ? ' switchable' : ''}" id="call-screen-wrap">
+            <video id="call-screen-video" autoplay playsinline></video>
+            ${sharers.length > 1 ? `<div class="call-screen-hint">Toque na tela para ver todas as transmissões (${escapeHtml(sharers.map(s => s.name).join(', '))})</div>` : ''}
+            <button class="call-pip-btn" id="call-pip-btn" title="Minimizar (Picture-in-Picture)">✕</button>
+          </div>`;
+      } else {
+        const allPeople = [
+          { number: myNumber, name: 'Você', photo: myProfile.photo },
+          ...[...groupCall.participants.entries()].map(([num, p]) => ({ number: num, name: p.name || num, photo: p.photo }))
+        ];
+        let peopleToShow = allPeople;
+        if (groupCall.simpleView && allPeople.length > 1){
+          const initiatorEntry = allPeople.find(p => p.number === groupCall.initiatorNumber) || allPeople[0];
+          const meEntry = allPeople.find(p => p.number === myNumber);
+          peopleToShow = initiatorEntry.number === meEntry.number ? [meEntry] : [initiatorEntry, meEntry];
+        }
+        mainHtml = `
+          ${allPeople.length > 1 ? `<button class="call-arrow-btn" id="call-view-toggle-btn" title="${groupCall.simpleView ? 'Ver todos os participantes' : 'Ver só quem ligou e você'}">${groupCall.simpleView ? '⤢' : '⤡'}</button>` : ''}
+          <div class="call-grid">
+            ${peopleToShow.map(p => `
+              <div class="call-photo-box">
+                <div class="call-avatar-big">${p.photo ? `<img src="${p.photo}" alt="">` : `<div class="call-avatar-fallback">${initialsFor(p.name || p.number)}</div>`}</div>
+                <span>${escapeHtml(p.number === myNumber ? 'Você' : (p.name || p.number))}</span>
+              </div>`).join('')}
+          </div>`;
+      }
+
+      box.innerHTML = `
+        <div class="call-topbar">
+          <button class="call-back-btn" id="call-back-btn" title="Voltar para as conversas">←</button>
+          <span class="call-topbar-title">📞 ${escapeHtml(groupCall.groupName || 'Grupo')} · ${groupCall.participants.size + 1} na chamada</span>
+          <span id="call-duration">00:00</span>
+        </div>
+        ${mainHtml}
+        <div class="call-controls">
+          <button class="call-btn ${groupCall.sharingScreen ? 'call-btn-active' : ''}" id="groupcall-screen-btn" title="Compartilhar tela">🖥️</button>
+          <button class="call-btn call-btn-hangup" id="groupcall-hangup-btn" title="Sair da chamada">📵</button>
+          <button class="call-btn ${(!groupCall.localStream || !groupCall.micEnabled) ? 'call-btn-active' : ''}" id="groupcall-mic-btn" title="${!groupCall.localStream ? 'Ativar microfone' : (groupCall.micEnabled ? 'Mutar microfone' : 'Desmutar microfone')}">${!groupCall.localStream ? '🎙️' : (groupCall.micEnabled ? '🎤' : '🔇')}</button>
+        </div>`;
+
+      const backBtn = document.getElementById('call-back-btn');
+      const hangupBtn = document.getElementById('groupcall-hangup-btn');
+      const screenBtn = document.getElementById('groupcall-screen-btn');
+      const micBtn = document.getElementById('groupcall-mic-btn');
+      if (backBtn) backBtn.addEventListener('click', minimizeCallToHome);
+      if (hangupBtn) hangupBtn.addEventListener('click', () => leaveGroupCall(true));
+      if (screenBtn) screenBtn.addEventListener('click', toggleScreenShareInGroupCall);
+      if (micBtn) micBtn.addEventListener('click', toggleMicInGroupCall);
+
+      if (showingScreen && gridView){
+        const gridEl = document.getElementById('call-screens-grid');
+        if (gridEl){
+          sharers.forEach(s => {
+            const tile = gridEl.querySelector(`.call-screen-tile[data-owner="${CSS.escape(s.owner)}"]`);
+            if (!tile) return;
+            const video = tile.querySelector('video');
+            if (video) video.srcObject = s.stream;
+            tile.addEventListener('click', () => {
+              groupCall.selectedScreenOwner = s.owner;
+              groupCall.screenGridView = false;
+              renderGroupCallUI();
+            });
+          });
+        }
+      } else if (showingScreen){
+        const current = sharers.find(s => s.owner === groupCall.selectedScreenOwner);
+        const video = document.getElementById('call-screen-video');
+        if (video && current){
+          video.muted = true; // áudio da tela toca num <audio> separado
+          video.srcObject = current.stream;
+        }
+        const wrap = document.getElementById('call-screen-wrap');
+        if (wrap && sharers.length > 1){
+          wrap.addEventListener('click', (e) => {
+            if (e.target.closest('.call-pip-btn')) return;
+            groupCall.screenGridView = true;
+            renderGroupCallUI();
+          });
+        }
+        const pipBtn = document.getElementById('call-pip-btn');
+        if (pipBtn) pipBtn.addEventListener('click', (e) => { e.stopPropagation(); enterGroupCallPictureInPicture(); });
+      } else {
+        const toggleBtn = document.getElementById('call-view-toggle-btn');
+        if (toggleBtn) toggleBtn.addEventListener('click', () => { groupCall.simpleView = !groupCall.simpleView; renderGroupCallUI(); });
+      }
+      startGroupCallDurationTimerIfNeeded();
+    }
+  }
+
+  // Se um participante da chamada de grupo ficar offline, ou se quem
+  // ligou pra mim (enquanto eu ainda nem atendi) cair, encerra sozinho.
+  function maybeEndGroupCallForOfflineNumber(number){
+    if (groupCall.active && groupCall.participants.has(number)){
+      removeGroupCallParticipant(number, true);
+    }
+    if (groupCall.state === 'ringing-in' && groupCall.initiatorNumber === number){
+      showToast('A pessoa que ligou para o grupo ficou offline.');
+      stopGroupCallRingLoop();
+      if (groupCall.timeoutTimer) clearTimeout(groupCall.timeoutTimer);
+      groupCall = freshGroupCallState();
+      hideCallOverlay();
+    }
+  }
+
+  // ============================================================
+  // RECEBIMENTO DE MENSAGENS (a única forma de uma mensagem
+  // aparecer na tela é através destes listeners, disparados
+  // exclusivamente pelo SERVIDOR)
+  // ============================================================
+  socket.on('private-message', (message) => {
+    const other = message.from === myNumber ? message.to : message.from;
+
+    const isCurrent = currentChat && currentChat.type === 'private' && currentChat.number === other;
+    if (isCurrent){
+      appendMessageToDOM(message, false);
+      scrollMessagesToBottom();
+    } else if (message.from !== myNumber){
+      showToast(`Nova mensagem de ${message.from}`);
+    }
+
+    if (message.from !== myNumber && (!isCurrent || document.hidden)){
+      playNotificationSound();
+      const chatInfo = findPrivateChat(message.from);
+      const senderName = (chatInfo && chatInfo.profile && chatInfo.profile.name) || message.from;
+      sendBrowserNotification(senderName, messagePreviewText(message), () => openPrivateChat(message.from));
+    }
+
+    // A mensagem já foi desenhada na tela acima (appendMessageToDOM).
+    // Só precisamos atualizar a lista de conversas (ordem/preview), sem
+    // reabrir a conversa inteira — isso evita apagar o histórico visível
+    // e o texto que a pessoa esteja digitando no campo de mensagem.
+    refreshInbox({ skipFooterRefresh: true });
+  });
+
+  // Chega quando ALGUEM te manda a PRIMEIRA mensagem (ou novas mensagens
+  // enquanto o pedido ainda esta pendente) -> vira solicitacao, nao
+  // mensagem normal.
+  socket.on('private-message-request', ({ message, relationship }) => {
+    const isCurrent = currentChat && currentChat.type === 'private' && currentChat.number === message.from;
+    if (isCurrent){
+      appendMessageToDOM(message, false);
+      scrollMessagesToBottom();
+    } else {
+      showToast(`Nova solicitação de mensagem de ${message.from}`);
+    }
+
+    if (!isCurrent || document.hidden){
+      playNotificationSound();
+      sendBrowserNotification(`Solicitação de ${message.from}`, messagePreviewText(message), () => openPrivateChat(message.from));
+    }
+
+    refreshInbox();
+  });
+
+  // O outro lado aceitou a solicitacao que EU enviei
+  socket.on('private-request-accepted', ({ number }) => {
+    showToast(`${number} aceitou sua solicitação de conversa!`);
+    refreshInbox();
+  });
+
+  // O outro lado recusou (e me bloqueou)
+  socket.on('private-request-rejected', ({ number, message }) => {
+    showToast(message || `${number} recusou sua solicitação.`);
+    refreshInbox();
+  });
+
+  socket.on('group-message', (message) => {
+    const isCurrent = currentChat && currentChat.type === 'group' && currentChat.id === message.groupId;
+    if (isCurrent){
+      appendMessageToDOM(message, true);
+      scrollMessagesToBottom();
+    } else if (message.from !== myNumber){
+      showToast(`Nova mensagem no grupo ${message.groupName || ''}`);
+    }
+
+    if (message.from !== myNumber && (!isCurrent || document.hidden)){
+      playNotificationSound();
+      sendBrowserNotification(
+        message.groupName || 'Grupo',
+        `${message.from}: ${messagePreviewText(message)}`,
+        () => { const g = findGroup(message.groupId); if (g) openGroupChat(g); }
+      );
+    }
+  });
+
+  // Fui convidado para um grupo novo
+  socket.on('group-invite', (group) => {
+    showToast(`Convite para o grupo "${group.name}"`);
+    refreshInbox();
+  });
+
+  socket.on('group-invite-accepted', ({ groupId, by }) => {
+    showToast(`${by} entrou no grupo.`);
+    refreshInbox();
+  });
+
+  socket.on('group-invite-rejected', ({ groupId, by, message }) => {
+    showToast(message || `${by} recusou o convite do grupo.`);
+    refreshInbox();
+  });
+
+  // Decide como exibir um arquivo anexado: imagem inline, video inline,
+  // audio inline (se o arquivo enviado for de audio) ou um cartão
+  // genérico com nome + tamanho + link de download, para qualquer
+  // outro formato (PDF, docs, zip, etc).
+  function renderFileContent(file){
+    if (!file || !file.url) return '';
+    const mime = (file.mimetype || '').toLowerCase();
+    const name = escapeHtml(file.name || 'arquivo');
+    const size = formatBytes(file.size);
+
+    if (mime.startsWith('image/')){
+      return `<a href="${file.url}" target="_blank" rel="noopener"><img class="msg-image" src="${file.url}" alt="${name}"></a>`;
+    }
+    if (mime.startsWith('video/')){
+      return `<video class="msg-video" controls src="${file.url}"></video>`;
+    }
+    if (mime.startsWith('audio/')){
+      return `<audio controls src="${file.url}"></audio>`;
+    }
+
+    return `
+      <a class="msg-file-card" href="${file.url}" target="_blank" rel="noopener" download="${name}">
+        <div class="msg-file-icon">📄</div>
+        <div class="msg-file-info">
+          <div class="msg-file-name">${name}</div>
+          <div class="msg-file-size">${size}</div>
+        </div>
+      </a>`;
+  }
+
+  function appendMessageToDOM(message, isGroup){
+    const container = document.getElementById('messages');
+    if (!container) return;
+
+    const sent = message.from === myNumber;
+    const div = document.createElement('div');
+    div.className = 'msg ' + (sent ? 'sent' : 'received') + (message.deleted ? ' deleted' : '');
+    div.dataset.msgId = message.id;
+
+    let inner = '';
+    if (isGroup && !sent){
+      inner += `<span class="sender-label">${escapeHtml(message.from)}</span>`;
+    }
+
+    if (message.deleted){
+      inner += `<span class="deleted-label">🚫 Mensagem apagada</span>`;
+    } else if (message.type === 'text'){
+      inner += `${escapeHtml(message.content)}`;
+    } else if (message.type === 'audio'){
+      inner += `<audio controls src="${message.content}"></audio>`;
+    } else if (message.type === 'file'){
+      inner += renderFileContent(message.content);
+    }
+
+    if (sent && !message.deleted){
+      // Só quem enviou pode apagar, e apaga para todo mundo (igual WhatsApp).
+      inner += `
+        <div class="msg-time-row">
+          <button class="msg-delete-btn" type="button" title="Apagar mensagem">🗑️</button>
+          <span class="msg-time">${formatTime(message.timestamp)}</span>
+        </div>`;
+    } else {
+      inner += `<div class="msg-time">${formatTime(message.timestamp)}</div>`;
+    }
+
+    div.innerHTML = inner;
+    container.appendChild(div);
+
+    if (sent && !message.deleted){
+      const delBtn = div.querySelector('.msg-delete-btn');
+      if (delBtn) delBtn.addEventListener('click', () => requestDeleteMessage(message));
+    }
+  }
+
+  // ============================================================
+  // APAGAR MENSAGEM (só quem enviou, apaga para todos)
+  // ============================================================
+  function requestDeleteMessage(message){
+    if (!window.confirm('Apagar esta mensagem para todos?')) return;
+
+    const payload = { messageId: message.id };
+    if (message.groupId){
+      payload.kind = 'group';
+      payload.groupId = message.groupId;
+    } else {
+      payload.kind = 'private';
+      payload.withNumber = message.to;
+    }
+
+    socket.emit('delete-message', payload, (res) => {
+      if (!res || !res.ok){
+        showToast((res && res.reason) || 'Erro ao apagar mensagem.');
+        return;
+      }
+      markMessageDeletedInDOM(message.id);
+    });
+  }
+
+  // Atualiza a bolha na tela (minha ou do outro lado) quando uma mensagem
+  // é apagada, sem precisar recarregar o histórico inteiro.
+  function markMessageDeletedInDOM(messageId){
+    const el = document.querySelector(`.msg[data-msg-id="${messageId}"]`);
+    if (!el || el.classList.contains('deleted')) return;
+
+    const senderLabelEl = el.querySelector('.sender-label');
+    const senderLabelHtml = senderLabelEl ? senderLabelEl.outerHTML : '';
+    const existingTimeEl = el.querySelector('.msg-time');
+    const timeText = existingTimeEl ? existingTimeEl.textContent : '';
+
+    el.classList.add('deleted');
+    el.innerHTML = `${senderLabelHtml}<span class="deleted-label">🚫 Mensagem apagada</span><div class="msg-time">${escapeHtml(timeText)}</div>`;
+  }
+
+  // Chega quando ALGUÉM apaga uma mensagem (o outro lado da conversa privada,
+  // ou qualquer membro de um grupo apagando a própria mensagem).
+  socket.on('message-deleted', ({ messageId }) => {
+    markMessageDeletedInDOM(messageId);
+  });
+
+  // ============================================================
+  // GRAVAÇÃO DE ÁUDIO REAL (getUserMedia + MediaRecorder)
+  // ============================================================
+  function toggleRecording(){
+    if (mediaRecorder && mediaRecorder.state === 'recording'){
+      mediaRecorder.stop();
+      return;
+    }
+    startRecording();
+  }
+
+  function startRecording(){
+    // No celular (e em navegadores modernos em geral), o microfone só é
+    // liberado em contexto seguro: HTTPS ou "localhost". Se o app for
+    // acessado por IP da rede local (ex: http://192.168.0.10:3000) em
+    // outro celular/computador, o navegador nem mostra o pedido de
+    // permissão -- então avisamos isso de forma clara em vez de um erro
+    // genérico e confuso.
+    const isSecure = window.isSecureContext || ['localhost', '127.0.0.1'].includes(location.hostname);
+    if (!isSecure){
+      showToast('Gravação de áudio só funciona em HTTPS ou "localhost". Acessando por IP na rede local, o navegador bloqueia o microfone.', 5000);
+      return;
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      showToast('Seu navegador não suporta gravação de áudio.');
+      return;
+    }
+
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then((stream) => {
+        recordingStream = stream;
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const recordBtn = document.getElementById('record-btn');
+          const indicator = document.getElementById('recording-indicator');
+          if (recordBtn) recordBtn.classList.remove('recording');
+          if (indicator) indicator.style.display = 'none';
+
+          if (recordingStream){
+            recordingStream.getTracks().forEach(t => t.stop());
+            recordingStream = null;
+          }
+
+          if (audioChunks.length === 0) return;
+
+          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64DataUrl = reader.result; // data:audio/webm;base64,....
+            sendAudioMessage(base64DataUrl);
+          };
+          reader.readAsDataURL(blob);
+        };
+
+        mediaRecorder.start();
+
+        const recordBtn = document.getElementById('record-btn');
+        const indicator = document.getElementById('recording-indicator');
+        if (recordBtn) recordBtn.classList.add('recording');
+        if (indicator) indicator.style.display = 'flex';
+      })
+      .catch((err) => {
+        console.error(err);
+        showToast('Não foi possível acessar o microfone. Verifique as permissões do navegador.');
+      });
+  }
+
+  function sendAudioMessage(base64DataUrl){
+    if (!currentChat) return;
+
+    if (currentChat.type === 'private'){
+      socket.emit('private-message', { to: currentChat.number, type: 'audio', content: base64DataUrl }, (res) => {
+        if (!res || !res.ok){
+          showToast((res && res.reason) || 'Erro ao enviar áudio.');
+          if (res && res.blocked) refreshInbox();
+        }
+      });
+    } else if (currentChat.type === 'group'){
+      socket.emit('group-message', { groupId: currentChat.id, type: 'audio', content: base64DataUrl }, (res) => {
+        if (!res || !res.ok){
+          showToast((res && res.reason) || 'Erro ao enviar áudio.');
+        }
+      });
+    }
+  }
+
+  // ============================================================
+  // ENVIO DE ARQUIVOS (qualquer formato: imagem, video, documento...)
+  // ============================================================
+  function formatBytes(bytes){
+    if (!bytes && bytes !== 0) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  function sendFileMessage(base64DataUrl, fileName){
+    if (!currentChat) return;
+
+    if (currentChat.type === 'private'){
+      socket.emit('private-message', { to: currentChat.number, type: 'file', content: base64DataUrl, fileName }, (res) => {
+        if (!res || !res.ok){
+          showToast((res && res.reason) || 'Erro ao enviar arquivo.');
+          if (res && res.blocked) refreshInbox();
+        }
+      });
+    } else if (currentChat.type === 'group'){
+      socket.emit('group-message', { groupId: currentChat.id, type: 'file', content: base64DataUrl, fileName }, (res) => {
+        if (!res || !res.ok){
+          showToast((res && res.reason) || 'Erro ao enviar arquivo.');
+        }
+      });
+    }
+  }
+
+  document.getElementById('input-attach').addEventListener('change', (e) => {
+    const input = e.target;
+    const file = input.files && input.files[0];
+    input.value = ''; // permite selecionar o mesmo arquivo de novo depois
+
+    if (!file || !currentChat) return;
+
+    if (file.size > MAX_FILE_BYTES){
+      showToast(`Arquivo muito grande. Máximo permitido: ${formatBytes(MAX_FILE_BYTES)}.`);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      sendFileMessage(reader.result, file.name);
+    };
+    reader.onerror = () => {
+      showToast('Não foi possível ler o arquivo selecionado.');
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // ============================================================
+  // MODAL: ADICIONAR CONTATO PRIVADO
+  // ============================================================
+  document.getElementById('open-private-modal').addEventListener('click', () => {
+    document.getElementById('input-private-number').value = '';
+    document.getElementById('error-private').textContent = '';
+    modalPrivate.classList.add('show');
+  });
+  document.getElementById('cancel-private').addEventListener('click', () => {
+    modalPrivate.classList.remove('show');
+  });
+  document.getElementById('confirm-private').addEventListener('click', () => {
+    const raw = document.getElementById('input-private-number').value.trim();
+    const errorEl = document.getElementById('error-private');
+    errorEl.textContent = '';
+
+    if (!NUMBER_REGEX.test(raw)){
+      errorEl.textContent = 'Formato inválido. Use 9XXXX-XXXX.';
+      return;
+    }
+    if (raw === myNumber){
+      errorEl.textContent = 'Você não pode adicionar seu próprio número.';
+      return;
+    }
+
+    socket.emit('check-user', { number: raw }, (res) => {
+      if (!res || !res.ok){
+        errorEl.textContent = (res && res.reason) || 'Usuário não encontrado ou offline.';
+        return;
+      }
+      if (res.blockedByThem){
+        errorEl.textContent = 'Este número bloqueou você.';
+        return;
+      }
+      modalPrivate.classList.remove('show');
+      openPrivateChat(raw);
+    });
+  });
+
+  // Auto-formata "9XXXXXXXX" -> "9XXXX-XXXX" enquanto digita
+  document.getElementById('input-private-number').addEventListener('input', (e) => {
+    let v = e.target.value.replace(/[^0-9]/g, '').slice(0, 9);
+    if (v.length > 5){
+      v = v.slice(0,5) + '-' + v.slice(5);
+    }
+    e.target.value = v;
+  });
+
+  // ============================================================
+  // MODAL: CRIAR GRUPO
+  // ============================================================
+  document.getElementById('open-group-modal').addEventListener('click', () => {
+    document.getElementById('input-group-name').value = '';
+    document.getElementById('input-group-members').value = '';
+    document.getElementById('error-group').textContent = '';
+    modalGroup.classList.add('show');
+  });
+  document.getElementById('cancel-group').addEventListener('click', () => {
+    modalGroup.classList.remove('show');
+  });
+  document.getElementById('confirm-group').addEventListener('click', () => {
+    const name = document.getElementById('input-group-name').value.trim();
+    const membersRaw = document.getElementById('input-group-members').value.trim();
+    const errorEl = document.getElementById('error-group');
+    errorEl.textContent = '';
+
+    if (!name){
+      errorEl.textContent = 'Digite um nome para o grupo.';
+      return;
+    }
+    const members = membersRaw.split(',').map(s => s.trim()).filter(Boolean);
+    if (members.length === 0){
+      errorEl.textContent = 'Adicione ao menos um número de membro.';
+      return;
+    }
+
+    socket.emit('create-group', { name, members }, (res) => {
+      if (!res || !res.ok){
+        errorEl.textContent = (res && res.reason) || 'Erro ao criar grupo.';
+        return;
+      }
+      modalGroup.classList.remove('show');
+      if (res.blockedOut && res.blockedOut.length){
+        showToast(`Alguns números bloquearam você e não foram adicionados: ${res.blockedOut.join(', ')}`);
+      }
+      refreshInbox();
+      openGroupChat(res.group);
+    });
+  });
+
+  // ============================================================
+  // MODAL: PERFIL (nome + foto, número travado)
+  // ============================================================
+  function openProfileModal(){
+    document.getElementById('profile-number-display').textContent = myNumber;
+    document.getElementById('input-profile-name').value = myProfile.name || '';
+    document.getElementById('error-profile').textContent = '';
+    pendingPhotoDataUrl = undefined;
+    updateProfilePreview(myProfile.photo || null);
+    modalProfile.classList.add('show');
+  }
+
+  function updateProfilePreview(photo){
+    const preview = document.getElementById('profile-avatar-preview');
+    if (photo){
+      preview.innerHTML = `<img src="${photo}" alt="">`;
+    } else {
+      preview.innerHTML = initialsFor(document.getElementById('input-profile-name').value || myNumber);
+    }
+  }
+
+  profileBtn.addEventListener('click', openProfileModal);
+  meAvatarEl.addEventListener('click', openProfileModal);
+
+  document.getElementById('cancel-profile').addEventListener('click', () => {
+    modalProfile.classList.remove('show');
+  });
+
+  // Ver/gerar a chave de recuperação a partir do perfil. Se já tiver
+  // uma chave salva neste navegador, mostra ela direto (sem precisar
+  // do servidor, já que o servidor só guarda o hash). Se não tiver
+  // (conta antiga, criada antes dessa função existir, ou login feito
+  // em outro dispositivo sem salvar), pede pro servidor gerar uma
+  // chave nova pra essa conta.
+  document.getElementById('profile-show-recovery-btn').addEventListener('click', () => {
+    const savedKey = localStorage.getItem('wa_recovery_key');
+    if (savedKey){
+      modalProfile.classList.remove('show');
+      showRecoveryKeyModal(myNumber, savedKey);
+      return;
+    }
+    socket.emit('generate-recovery-key', {}, (res) => {
+      if (!res || !res.ok){
+        showToast((res && res.reason) || 'Não foi possível gerar a chave.');
+        return;
+      }
+      localStorage.setItem('wa_recovery_key', res.recoveryKey);
+      modalProfile.classList.remove('show');
+      showRecoveryKeyModal(myNumber, res.recoveryKey);
+    });
+  });
+
+  document.getElementById('input-profile-name').addEventListener('input', () => {
+    if (pendingPhotoDataUrl === undefined && !myProfile.photo){
+      updateProfilePreview(null);
+    }
+  });
+
+  document.getElementById('choose-photo-btn').addEventListener('click', () => {
+    document.getElementById('input-photo').click();
+  });
+
+  document.getElementById('input-photo').addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const errorEl = document.getElementById('error-profile');
+    errorEl.textContent = '';
+
+    if (!file.type.startsWith('image/')){
+      errorEl.textContent = 'Escolha um arquivo de imagem válido.';
+      return;
+    }
+
+    // Redimensiona no navegador para manter a foto pequena e leve
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = () => {
+      img.onload = () => {
+        const MAX_SIZE = 256;
+        let { width, height } = img;
+        if (width > height){
+          if (width > MAX_SIZE){ height = Math.round(height * (MAX_SIZE / width)); width = MAX_SIZE; }
+        } else {
+          if (height > MAX_SIZE){ width = Math.round(width * (MAX_SIZE / height)); height = MAX_SIZE; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        pendingPhotoDataUrl = dataUrl;
+        updateProfilePreview(dataUrl);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('remove-photo-btn').addEventListener('click', () => {
+    pendingPhotoDataUrl = null;
+    updateProfilePreview(null);
+  });
+
+  document.getElementById('confirm-profile').addEventListener('click', () => {
+    const name = document.getElementById('input-profile-name').value.trim();
+    const errorEl = document.getElementById('error-profile');
+    errorEl.textContent = '';
+
+    const payload = { name };
+    if (pendingPhotoDataUrl !== undefined) payload.photo = pendingPhotoDataUrl;
+
+    socket.emit('update-profile', payload, (res) => {
+      if (!res || !res.ok){
+        errorEl.textContent = (res && res.reason) || 'Erro ao salvar perfil.';
+        return;
+      }
+      myProfile = res.profile;
+      renderMeHeader();
+      modalProfile.classList.remove('show');
+      showToast('Perfil atualizado!');
+    });
+  });
+
+  // ============================================================
+  // MODAL: EDITAR GRUPO (nome + foto)
+  // ============================================================
+  function openEditGroupModal(groupId){
+    const group = findGroup(groupId);
+    if (!group) return;
+
+    editingGroupId = groupId;
+    pendingGroupPhotoDataUrl = undefined;
+    document.getElementById('input-edit-group-name').value = group.name || '';
+    document.getElementById('error-edit-group').textContent = '';
+    updateGroupAvatarPreview(group.photo || null, group.name);
+    renderEditGroupMembersList(group);
+    document.getElementById('edit-group-add-member-form').style.display = 'none';
+    document.getElementById('input-edit-group-new-members').value = '';
+    document.getElementById('error-edit-group-add-member').textContent = '';
+    modalEditGroup.classList.add('show');
+  }
+
+  // Lista os membros do grupo (aceitos e ainda pendentes) dentro da
+  // tela de editar grupo, junto com o botão "+" pra convidar mais gente.
+  function renderEditGroupMembersList(group){
+    const listEl = document.getElementById('edit-group-members-list');
+    const members = (group && group.members) || [];
+    if (members.length === 0){
+      listEl.innerHTML = '<div style="color:var(--texto-cinza);">Nenhum membro.</div>';
+      return;
+    }
+    listEl.innerHTML = members.map(m => {
+      const isMe = m.number === myNumber;
+      const label = isMe ? `${m.number} (você)` : m.number;
+      const statusTag = m.status === 'pending' ? ' <span style="color:var(--texto-cinza);">· convite pendente</span>' : '';
+      return `<div style="padding:4px 0; border-bottom:1px solid var(--cinza-borda);">${escapeHtml(label)}${statusTag}</div>`;
+    }).join('');
+  }
+
+  function updateGroupAvatarPreview(photo, name){
+    const preview = document.getElementById('group-avatar-preview');
+    if (photo){
+      preview.innerHTML = `<img src="${photo}" alt="">`;
+    } else {
+      preview.innerHTML = initialsFor(name || document.getElementById('input-edit-group-name').value || 'G');
+    }
+  }
+
+  document.getElementById('cancel-edit-group').addEventListener('click', () => {
+    modalEditGroup.classList.remove('show');
+  });
+
+  document.getElementById('input-edit-group-name').addEventListener('input', () => {
+    if (pendingGroupPhotoDataUrl === undefined){
+      const group = findGroup(editingGroupId);
+      if (!group || !group.photo) updateGroupAvatarPreview(null, document.getElementById('input-edit-group-name').value);
+    }
+  });
+
+  document.getElementById('choose-group-photo-btn').addEventListener('click', () => {
+    document.getElementById('input-group-photo').click();
+  });
+
+  document.getElementById('input-group-photo').addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const errorEl = document.getElementById('error-edit-group');
+    errorEl.textContent = '';
+
+    if (!file.type.startsWith('image/')){
+      errorEl.textContent = 'Escolha um arquivo de imagem válido.';
+      return;
+    }
+
+    // Redimensiona no navegador para manter a foto pequena e leve
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = () => {
+      img.onload = () => {
+        const MAX_SIZE = 256;
+        let { width, height } = img;
+        if (width > height){
+          if (width > MAX_SIZE){ height = Math.round(height * (MAX_SIZE / width)); width = MAX_SIZE; }
+        } else {
+          if (height > MAX_SIZE){ width = Math.round(width * (MAX_SIZE / height)); height = MAX_SIZE; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        pendingGroupPhotoDataUrl = dataUrl;
+        updateGroupAvatarPreview(dataUrl);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('remove-group-photo-btn').addEventListener('click', () => {
+    pendingGroupPhotoDataUrl = null;
+    updateGroupAvatarPreview(null, document.getElementById('input-edit-group-name').value);
+  });
+
+  document.getElementById('confirm-edit-group').addEventListener('click', () => {
+    if (!editingGroupId) return;
+    const name = document.getElementById('input-edit-group-name').value.trim();
+    const errorEl = document.getElementById('error-edit-group');
+    errorEl.textContent = '';
+
+    if (!name){
+      errorEl.textContent = 'O nome do grupo não pode ficar vazio.';
+      return;
+    }
+
+    const payload = { groupId: editingGroupId, name };
+    if (pendingGroupPhotoDataUrl !== undefined) payload.photo = pendingGroupPhotoDataUrl;
+
+    socket.emit('update-group', payload, (res) => {
+      if (!res || !res.ok){
+        errorEl.textContent = (res && res.reason) || 'Erro ao salvar grupo.';
+        return;
+      }
+      const g = findGroup(editingGroupId);
+      if (g){
+        g.name = res.group.name;
+        g.photo = res.group.photo;
+      }
+      if (currentChat && currentChat.type === 'group' && currentChat.id === editingGroupId){
+        currentChat.name = res.group.name;
+        currentChat.photo = res.group.photo;
+        openGroupChat({ id: editingGroupId, name: res.group.name, photo: res.group.photo, members: res.group.members });
+      }
+      renderConversationList();
+      modalEditGroup.classList.remove('show');
+      showToast('Grupo atualizado!');
+    });
+  });
+
+  // Botão "+" ao lado de "Membros": abre o formulário pra convidar
+  // mais gente pro grupo que já existe.
+  document.getElementById('edit-group-add-member-btn').addEventListener('click', () => {
+    const form = document.getElementById('edit-group-add-member-form');
+    const opening = form.style.display === 'none';
+    form.style.display = opening ? '' : 'none';
+    if (opening) document.getElementById('input-edit-group-new-members').focus();
+  });
+
+  document.getElementById('edit-group-add-member-cancel').addEventListener('click', () => {
+    document.getElementById('edit-group-add-member-form').style.display = 'none';
+    document.getElementById('input-edit-group-new-members').value = '';
+    document.getElementById('error-edit-group-add-member').textContent = '';
+  });
+
+  document.getElementById('edit-group-add-member-confirm').addEventListener('click', () => {
+    if (!editingGroupId) return;
+    const errorEl = document.getElementById('error-edit-group-add-member');
+    errorEl.textContent = '';
+
+    const raw = document.getElementById('input-edit-group-new-members').value.trim();
+    const members = raw.split(',').map(s => s.trim()).filter(Boolean);
+    if (members.length === 0){
+      errorEl.textContent = 'Digite pelo menos um número.';
+      return;
+    }
+
+    socket.emit('add-group-members', { groupId: editingGroupId, members }, (res) => {
+      if (!res || !res.ok){
+        errorEl.textContent = (res && res.reason) || 'Erro ao adicionar membros.';
+        return;
+      }
+      const g = findGroup(editingGroupId);
+      if (g) g.members = res.group.members;
+      renderEditGroupMembersList(res.group);
+      document.getElementById('input-edit-group-new-members').value = '';
+      document.getElementById('edit-group-add-member-form').style.display = 'none';
+      let msg = 'Convite enviado!';
+      if (res.blockedOut && res.blockedOut.length){
+        msg += ` (${res.blockedOut.join(', ')} não recebeu porque bloqueou você.)`;
+      }
+      showToast(msg);
+    });
+  });
+
+  // Chega pros outros membros já aceitos quando alguém convida gente
+  // nova pro grupo — atualiza a lista se a tela de editar tiver aberta.
+  socket.on('group-members-added', ({ groupId, group }) => {
+    const g = findGroup(groupId);
+    if (g) g.members = group.members;
+    if (editingGroupId === groupId && modalEditGroup.classList.contains('show')){
+      renderEditGroupMembersList(group);
+    }
+  });
+
+  // Chega quando EU ou outro membro edita o nome/foto do grupo
+  // (atualiza a lista e o cabeçalho da conversa em tempo real)
+  socket.on('group-updated', ({ groupId, name, photo }) => {
+    const g = findGroup(groupId);
+    if (g){
+      g.name = name;
+      g.photo = photo;
+    }
+    renderConversationList();
+    if (currentChat && currentChat.type === 'group' && currentChat.id === groupId){
+      currentChat.name = name;
+      currentChat.photo = photo;
+      const nameEl = document.getElementById('chat-header-name');
+      const avatarWrap = document.querySelector('#chat-header .avatar');
+      if (nameEl) nameEl.textContent = name;
+      if (avatarWrap) avatarWrap.outerHTML = avatarHtml(groupId, { name, photo }, 'group');
+      const headerAvatarEl = document.querySelector('#chat-header .avatar');
+      if (headerAvatarEl){
+        headerAvatarEl.style.cursor = 'pointer';
+        headerAvatarEl.addEventListener('click', () => openEditGroupModal(groupId));
+      }
+    }
+  });
+
+  // ============================================================
+  // SAIR DO NÚMERO / ENTRAR EM OUTRO NÚMERO (SÓ COM A CHAVE)
+  //
+  // Ficam no cantinho de cima, ao lado de "Perfil". "Sair" limpa este
+  // navegador e volta pra tela de boas-vindas. "Entrar em outro
+  // número" troca de conta na hora, direto pela chave de recuperação
+  // (sem precisar sair primeiro nem informar o número).
+  //
+  // As duas ações recarregam a página de propósito: é a forma mais
+  // segura de garantir que nenhum resquício da conta anterior
+  // (conversas, grupos, chamada em andamento, conversa aberta etc.)
+  // fique misturado com a conta nova.
+  // ============================================================
+  const logoutBtn = document.getElementById('logout-btn');
+  const switchAccountBtn = document.getElementById('switch-account-btn');
+  const modalSwitchAccountCurrentNumber = document.getElementById('switch-account-current-number');
+  const inputSwitchAccountKey = document.getElementById('input-switch-account-key');
+  const errorSwitchAccount = document.getElementById('error-switch-account');
+
+  logoutBtn.addEventListener('click', () => {
+    const ok = confirm('Sair deste número? Você vai precisar da chave de recuperação pra entrar de novo (nesse ou em outro navegador).');
+    if (!ok) return;
+    localStorage.removeItem('wa_my_number');
+    localStorage.removeItem('wa_recovery_key');
+    location.reload();
+  });
+
+  switchAccountBtn.addEventListener('click', () => {
+    modalSwitchAccountCurrentNumber.textContent = myNumber || '—';
+    inputSwitchAccountKey.value = '';
+    errorSwitchAccount.textContent = '';
+    modalSwitchAccount.classList.add('show');
+    setTimeout(() => inputSwitchAccountKey.focus(), 50);
+  });
+
+  document.getElementById('cancel-switch-account').addEventListener('click', () => {
+    modalSwitchAccount.classList.remove('show');
+  });
+
+  document.getElementById('confirm-switch-account').addEventListener('click', () => {
+    const key = inputSwitchAccountKey.value.trim().toUpperCase();
+    if (!key){
+      errorSwitchAccount.textContent = 'Digite a chave de recuperação.';
+      return;
+    }
+    errorSwitchAccount.textContent = '';
+    // Só a chave, de propósito — sem número, como pedido.
+    socket.emit('login-with-key', { recoveryKey: key }, (res) => {
+      if (!res || !res.ok){
+        errorSwitchAccount.textContent = (res && res.reason) || 'Não foi possível entrar com essa chave.';
+        return;
+      }
+      localStorage.setItem('wa_my_number', res.number);
+      localStorage.setItem('wa_recovery_key', key);
+      location.reload();
+    });
+  });
+
+  // Fecha modais clicando fora da caixa
+  [modalPrivate, modalGroup, modalProfile, modalEditGroup, modalSwitchAccount].forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.classList.remove('show');
+    });
+  });
+
+})();
+</script>
+</body>
+</html>
